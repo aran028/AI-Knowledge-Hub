@@ -25,6 +25,33 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@/domain": [
+        "./src/domain"
+      ],
+      "@/domain/*": [
+        "./src/domain/*"
+      ],
+      "@/components": [
+        "./src/presentation/components"
+      ],
+      "@/components/*": [
+        "./src/presentation/components/*"
+      ],
+      "@/hooks": [
+        "./src/presentation/hooks"
+      ],
+      "@/hooks/*": [
+        "./src/presentation/hooks/*"
+      ],
+      "@/shared": [
+        "./src/shared"
+      ],
+      "@/shared/*": [
+        "./src/shared/*"
+      ],
+      "@/lib/*": [
+        "./src/shared/*"
       ]
     }
   },

@@ -34,6 +34,39 @@ CREATE TABLE public.tools (
     CONSTRAINT fk_tools_playlist FOREIGN KEY (playlist_id) REFERENCES public.playlists(id) ON DELETE CASCADE
 );
 
+-- Crear tabla de contenido de YouTube clasificado por IA
+CREATE TABLE public.youtube_content (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    video_id TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    description TEXT,
+    channel_name TEXT NOT NULL,
+    channel_url TEXT,
+    video_url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    duration TEXT,
+    published_at TIMESTAMP WITH TIME ZONE,
+    view_count BIGINT,
+    like_count BIGINT,
+    
+    -- Clasificación por IA
+    ai_classification JSONB NOT NULL,
+    confidence_score DECIMAL(3,2),
+    related_tools TEXT[] DEFAULT '{}',
+    playlist_id UUID,
+    
+    -- Metadatos adicionales
+    tags TEXT[] DEFAULT '{}',
+    ai_summary TEXT,
+    ai_key_points TEXT[],
+    
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    
+    CONSTRAINT fk_youtube_playlist FOREIGN KEY (playlist_id) REFERENCES public.playlists(id) ON DELETE SET NULL
+);
+
 -- Añadir índices para mejorar el rendimiento
 CREATE INDEX idx_tools_playlist_id ON public.tools(playlist_id);
 CREATE INDEX idx_tools_user_id ON public.tools(user_id);
@@ -42,10 +75,24 @@ CREATE INDEX idx_playlists_user_id ON public.playlists(user_id);
 CREATE INDEX idx_playlists_name ON public.playlists(name);
 CREATE INDEX idx_profiles_email ON public.profiles(email);
 
+-- Índices para contenido de YouTube
+CREATE INDEX idx_youtube_content_user_id ON public.youtube_content(user_id);
+CREATE INDEX idx_youtube_content_playlist_id ON public.youtube_content(playlist_id);
+CREATE INDEX idx_youtube_content_video_id ON public.youtube_content(video_id);
+CREATE INDEX idx_youtube_content_created_at ON public.youtube_content(created_at DESC);
+CREATE INDEX idx_youtube_content_published_at ON public.youtube_content(published_at DESC);
+CREATE INDEX idx_youtube_content_confidence ON public.youtube_content(confidence_score DESC);
+
+-- GIN index para búsquedas en arrays y JSONB
+CREATE INDEX idx_youtube_content_tags ON public.youtube_content USING GIN(tags);
+CREATE INDEX idx_youtube_content_related_tools ON public.youtube_content USING GIN(related_tools);
+CREATE INDEX idx_youtube_content_ai_classification ON public.youtube_content USING GIN(ai_classification);
+
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE public.playlists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tools ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.youtube_content ENABLE ROW LEVEL SECURITY;
 
 -- Crear políticas para playlists (solo acceso a las propias)
 CREATE POLICY "Users can view own playlists" ON public.playlists
@@ -82,6 +129,23 @@ CREATE POLICY "Users can update own profile" ON public.profiles
 
 CREATE POLICY "Users can insert own profile" ON public.profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Crear políticas para youtube_content (solo acceso a contenido propio)
+CREATE POLICY "Users can view own youtube content" ON public.youtube_content
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own youtube content" ON public.youtube_content
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own youtube content" ON public.youtube_content
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own youtube content" ON public.youtube_content
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- Política especial para webhooks (permitir inserts desde service role)
+CREATE POLICY "Allow service role to insert youtube content" ON public.youtube_content
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 -- Función para configurar datos iniciales para nuevos usuarios
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -180,5 +244,10 @@ CREATE TRIGGER update_tools_updated_at
 
 CREATE TRIGGER update_profiles_updated_at
     BEFORE UPDATE ON public.profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_youtube_content_updated_at
+    BEFORE UPDATE ON public.youtube_content
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();

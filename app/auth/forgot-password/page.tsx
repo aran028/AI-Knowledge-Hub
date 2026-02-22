@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Mail, ArrowLeft } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuth } from "@/src/presentation/hooks/use-auth.hook"
 import Link from "next/link"
 
 export default function ForgotPasswordPage() {
@@ -48,8 +48,8 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mx-auto">
-              <Mail className="h-6 w-6 text-green-600" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-pink-100 mx-auto">
+              <Mail className="h-6 w-6" style={{ color: '#F875AA' }} />
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Te hemos enviado un link a <strong>{email}</strong> para restablecer tu contraseña.

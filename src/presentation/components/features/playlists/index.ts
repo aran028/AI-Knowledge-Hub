@@ -1,0 +1,1 @@
+export { PlaylistManagement } from "./playlist-management.component";

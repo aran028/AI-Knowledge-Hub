@@ -1,0 +1,1 @@
+export { ToolManagement } from "./tool-management.component";

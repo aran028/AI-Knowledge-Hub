@@ -1,22 +1,68 @@
 "use client"
 
 import { useState } from "react"
-import { Sidebar } from "@/components/sidebar"
-import { GlassHeader } from "@/components/glass-header"
-import { HeroSection } from "@/components/hero-section"
-import { ScrollRow } from "@/components/scroll-row"
-import { GridView } from "@/components/grid-view"
-import { usePlaylists, useTools } from "@/hooks/use-supabase"
+import { Sidebar } from "@/components/layout/sidebar.component"
+import { GlassHeader } from "@/components/layout/glass-header.component"
+import { HeroSection } from "@/components/layout/hero-section.component"
+import { ScrollRow } from "@/components/layout/scroll-row.component"
+import { GridView } from "@/components/features/tools/tool-grid.component"
+import { YouTubeDashboard } from "@/components/features/youtube/youtube-dashboard"
+import { ChatBot } from "@/src/presentation/components/ui/chatbot"
+import { usePlaylists, useTools } from "@/src/presentation/hooks/use-supabase.hook"
 
 export default function Home() {
   const [activePlaylist, setActivePlaylist] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [searchResults, setSearchResults] = useState<{tools: string[], playlists: string[]}>({tools: [], playlists: []})
   
   // Obtener datos de Supabase
-  const { playlists, loading: playlistsLoading, error: playlistsError } = usePlaylists()
+  const { playlists, loading: playlistsLoading, error: playlistsError, refetch: refetchPlaylists } = usePlaylists()
   
-  const { tools, loading: toolsLoading, error: toolsError } = useTools(activePlaylist)
+  const { tools, loading: toolsLoading, error: toolsError, refetch: refetchTools } = useTools(activePlaylist)
 
   const activeSubject = playlists.find((p) => p.id === activePlaylist)
+
+  // Handler para cuando se modifica una playlist
+  const handlePlaylistChanged = () => {
+    refetchPlaylists()
+    refetchTools()
+  }
+
+  // Handler para cuando se modifica una herramienta  
+  const handleToolChanged = () => {
+    refetchTools()
+    refetchPlaylists() // Para actualizar el count de las playlists
+  }
+
+  // Handler para búsqueda
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+    
+    if (!query.trim()) {
+      setSearchResults({tools: [], playlists: []})
+      return
+    }
+    
+    const lowerQuery = query.toLowerCase()
+    
+    // Buscar en herramientas
+    const foundTools = [...tools.recentlyAdded, ...tools.popularTools]
+      .filter(tool => 
+        tool.title.toLowerCase().includes(lowerQuery) ||
+        tool.summary.toLowerCase().includes(lowerQuery) ||
+        tool.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+      )
+      .map(tool => tool.id)
+    
+    // Buscar en playlists
+    const foundPlaylists = playlists
+      .filter(playlist => 
+        playlist.name.toLowerCase().includes(lowerQuery)
+      )
+      .map(playlist => playlist.id)
+    
+    setSearchResults({tools: foundTools, playlists: foundPlaylists})
+  }
 
   // Mostrar loading state
   if (playlistsLoading || toolsLoading) {
@@ -76,6 +122,9 @@ export default function Home() {
         playlists={playlists}
         activePlaylist={activePlaylist}
         onSelectPlaylist={setActivePlaylist}
+        onPlaylistChanged={handlePlaylistChanged}
+        onSearch={handleSearch}
+        searchResults={searchResults.playlists}
       />
 
       {/* Main content */}
@@ -84,14 +133,26 @@ export default function Home() {
           id="main-scroll"
           className="custom-scrollbar flex-1 overflow-y-auto"
         >
-          <GlassHeader onToolAdded={() => {
-            // Recargar datos cuando se agregue una nueva herramienta
-            window.location.reload()
-          }} />
+          <GlassHeader onToolAdded={handleToolChanged} />
 
           <div className="flex flex-col gap-10 px-6 pb-32">
+            {/* Search results indicator */}
+            {searchQuery && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-blue-900">
+                  🔍 Resultados de búsqueda para "{searchQuery}"
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  {searchResults.tools.length} herramientas y {searchResults.playlists.length} playlists encontradas
+                </p>
+              </div>
+            )}
+
             {/* Hero Section — only on home */}
             {!activePlaylist && <HeroSection tools={tools.recentlyAdded} />}
+
+            {/* YouTube Dashboard — only on home */}
+            {!activePlaylist && <YouTubeDashboard maxItems={6} />}
 
             {/* Filtered view title */}
             {activePlaylist && activeSubject && (
@@ -102,36 +163,37 @@ export default function Home() {
                 <h1 className="mt-1 text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
                   {activeSubject.name}
                 </h1>
+                {activeSubject.description && (
+                  <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
+                    {activeSubject.description}
+                  </p>
+                )}
               </div>
             )}
 
-            {/* Scroll rows */}
+            {/* Scroll rows - ahora usando GridView para unificar estilo */}
             {tools.popularTools.length > 0 && (
-              <ScrollRow
-                title={activePlaylist ? "Tools" : "Popular Tools"}
-                tools={tools.popularTools}
-              />
-            )}
-
-            {tools.trendingNow.length > 0 && (
-              <ScrollRow
-                title={activePlaylist ? "Trending" : "Trending Now"}
-                tools={tools.trendingNow}
-              />
-            )}
-
-            {tools.myProjects.length > 0 && (
               <GridView
-                title={activePlaylist ? "Your Projects" : "My Projects"}
-                tools={tools.myProjects}
+                title={activePlaylist ? "Tools" : "Popular Tools"}
+                description={activePlaylist && activeSubject ? activeSubject.description : undefined}
+                tools={tools.popularTools}
+                showManagement={true}
+                onToolChanged={handleToolChanged}
+                highlightedTools={searchResults.tools}
               />
+            )}
+
+            {/* YouTube section para páginas de playlist */}
+            {activePlaylist && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
+                <YouTubeDashboard maxItems={8} showHeader={false} />
+              </div>
             )}
 
             {/* Empty state */}
             {activePlaylist &&
-              tools.popularTools.length === 0 &&
-              tools.trendingNow.length === 0 &&
-              tools.myProjects.length === 0 && (
+              tools.popularTools.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-secondary">
                     <span className="text-2xl text-muted-foreground">?</span>
@@ -146,6 +208,16 @@ export default function Home() {
               )}
           </div>
         </div>
+        
+        {/* ChatBot */}
+        <ChatBot 
+          pageContent={{
+            activePlaylist,
+            playlists,
+            tools: [...tools.recentlyAdded, ...tools.popularTools],
+            searchQuery
+          }}
+        />
       </main>
     </div>
   )
