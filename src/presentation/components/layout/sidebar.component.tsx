@@ -37,6 +37,19 @@ const iconMap: Record<string, React.ReactNode> = {
   layers: <Layers className="size-4" />,
 }
 
+// Colores vibrantes para cada categoría
+const iconColors: Record<string, string> = {
+  brain: "bg-gradient-to-br from-purple-500 to-pink-500 text-white",
+  code: "bg-gradient-to-br from-blue-500 to-cyan-500 text-white", 
+  workflow: "bg-gradient-to-br from-green-500 to-emerald-500 text-white",
+  terminal: "bg-gradient-to-br from-gray-600 to-gray-800 text-white",
+  palette: "bg-gradient-to-br from-pink-500 to-rose-500 text-white",
+  notebook: "bg-gradient-to-br from-orange-500 to-yellow-500 text-white",
+  "git-branch": "bg-gradient-to-br from-indigo-500 to-purple-500 text-white",
+  server: "bg-gradient-to-br from-red-500 to-pink-500 text-white",
+  layers: "bg-gradient-to-br from-teal-500 to-blue-500 text-white",
+}
+
 interface SidebarProps {
   playlists: Playlist[]
   activePlaylist: string | null
@@ -70,28 +83,32 @@ export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onPlaylis
           <li>
             <Link
               href="/"
-              className={`flex items-center gap-4 text-xs font-medium transition-colors hover:text-foreground ${
-                pathname === "/" ? "text-foreground" : "text-muted-foreground"
+              className={`group flex items-center gap-4 text-xs font-medium rounded-lg p-3 transition-all duration-200 hover:bg-primary/10 hover:scale-105 ${
+                pathname === "/" ? "text-foreground bg-primary/20 shadow-lg" : "text-muted-foreground"
               }`}
             >
-              <Home className="size-6 shrink-0" />
+              <Home className={`size-6 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+                pathname === "/" ? "text-primary" : ""
+              }`} />
               <span className="hidden lg:inline">Home</span>
             </Link>
           </li>
           <li>
             <Link
               href="/youtube"
-              className={`flex items-center gap-4 text-xs font-medium transition-colors hover:text-foreground ${
-                pathname === "/youtube" ? "text-foreground" : "text-muted-foreground"
+              className={`group flex items-center gap-4 text-xs font-medium rounded-lg p-3 transition-all duration-200 hover:bg-red-500/10 hover:scale-105 ${
+                pathname === "/youtube" ? "text-foreground bg-red-500/20 shadow-lg" : "text-muted-foreground"
               }`}
             >
-              <Youtube className="size-6 shrink-0" />
+              <Youtube className={`size-6 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+                pathname === "/youtube" ? "text-red-500" : ""
+              }`} />
               <span className="hidden lg:inline">YouTube</span>
             </Link>
           </li>
           <li>
-            <div className="flex items-center gap-4">
-              <Search className="size-6 shrink-0 text-muted-foreground" />
+            <div className="group flex items-center gap-4 rounded-lg p-3 transition-all duration-200 hover:bg-blue-500/10">
+              <Search className="size-6 shrink-0 text-muted-foreground group-hover:text-blue-500 transition-colors duration-200" />
               <div className="hidden lg:flex flex-1 relative">
                 <Input
                   placeholder="Buscar tools y playlists..."
@@ -134,14 +151,14 @@ export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onPlaylis
           <div className="flex-1 overflow-y-auto px-2 pb-2">
             {/* Liked Tools */}
             <button
-              className="mb-1 flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-accent"
+              className="mb-1 flex w-full items-center gap-3 rounded-md p-2 text-left transition-all duration-300 hover:bg-accent hover:scale-[1.02] hover:shadow-md group"
             >
-              <div className="flex size-12 shrink-0 items-center justify-center rounded bg-gradient-to-br from-[#450AF5] to-[#C4EFD9] lg:size-12">
-                <Heart className="size-4 text-foreground" fill="currentColor" />
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#450AF5] to-[#C4EFD9] lg:size-12 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
+                <Heart className="size-4 text-foreground transition-transform duration-300 group-hover:scale-110" fill="currentColor" />
               </div>
               <div className="hidden min-w-0 lg:block">
-                <p className="truncate text-xs font-medium text-foreground">Liked Tools</p>
-                <p className="truncate text-[10px] text-muted-foreground">24 tools</p>
+                <p className="truncate text-xs font-medium text-foreground group-hover:text-primary transition-colors duration-200">Liked Tools</p>
+                <p className="truncate text-[10px] text-muted-foreground group-hover:text-primary/80 transition-colors duration-200">24 tools</p>
               </div>
             </button>
 
@@ -150,24 +167,26 @@ export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onPlaylis
               <div key={playlist.id} className="group relative">
                 <button
                   onClick={() => onSelectPlaylist(playlist.id === activePlaylist ? null : playlist.id)}
-                  className={`mb-0.5 flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-accent ${
-                    activePlaylist === playlist.id ? "bg-accent" : ""
+                  className={`mb-0.5 flex w-full items-center gap-3 rounded-md p-2 text-left transition-all duration-300 hover:bg-accent hover:scale-[1.02] hover:shadow-md ${
+                    activePlaylist === playlist.id ? "bg-accent scale-[1.02] shadow-md" : ""
                   } ${
                     searchResults.includes(playlist.id) ? "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50" : ""
                   }`}
                 >
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded bg-secondary text-muted-foreground">
+                  <div className={`flex size-12 shrink-0 items-center justify-center rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${
+                    iconColors[playlist.icon] || "bg-gradient-to-br from-gray-400 to-gray-600 text-white"
+                  }`}>
                     {iconMap[playlist.icon] || <Layers className="size-4" />}
                   </div>
                   <div className="hidden min-w-0 lg:block">
-                    <p className="truncate text-xs font-medium text-foreground">{playlist.name}</p>
+                    <p className="truncate text-xs font-medium text-foreground group-hover:text-primary transition-colors duration-200">{playlist.name}</p>
                     {playlist.description && (
-                      <p className="truncate text-[9px] text-muted-foreground mb-0.5">{playlist.description}</p>
+                      <p className="truncate text-[9px] text-muted-foreground mb-0.5 group-hover:text-foreground transition-colors duration-200">{playlist.description}</p>
                     )}
-                    <p className="truncate text-[10px] text-muted-foreground">{playlist.count} tools</p>
+                    <p className="truncate text-[10px] text-muted-foreground group-hover:text-primary/80 transition-colors duration-200">{playlist.count} tools</p>
                   </div>
                 </button>
-                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-0 group-hover:scale-100">
                   <PlaylistManagement 
                     mode="edit" 
                     playlist={playlist} 

@@ -108,3 +108,4 @@ temp/
 
 # Auto-generated files
 components/ui/index.ts
+.vercel
