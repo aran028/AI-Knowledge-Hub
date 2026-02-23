@@ -109,7 +109,7 @@ export function YouTubeContentView() {
         return "grid grid-cols-1 gap-4"
       case "grid":
       default:
-        return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
     }
   }
 
@@ -136,7 +136,7 @@ export function YouTubeContentView() {
         </div>
         
         {/* Skeleton para contenido */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <div className="aspect-video bg-muted" />
@@ -174,10 +174,10 @@ export function YouTubeContentView() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Play className="h-4 w-4 text-muted-foreground" />
+                <Play className="h-4 w-4 text-red-500" />
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Videos</p>
-                  <p className="text-2xl font-bold">{stats?.totalVideos || 0}</p>
+                  <p className="text-2xl font-bold">{stats?.total_videos || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -186,11 +186,11 @@ export function YouTubeContentView() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Eye className="h-4 w-4 text-muted-foreground" />
+                <Eye className="h-4 w-4 text-blue-500" />
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Visualizaciones</p>
                   <p className="text-2xl font-bold">
-                    {formatNumber(stats?.totalViews)}
+                    {formatNumber(stats?.confidence_distribution ? (stats.confidence_distribution.high + stats.confidence_distribution.medium + stats.confidence_distribution.low) : 0)}
                   </p>
                 </div>
               </div>
@@ -200,10 +200,10 @@ export function YouTubeContentView() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Calendar className="h-4 w-4 text-green-500" />
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Esta semana</p>
-                  <p className="text-2xl font-bold">{stats?.videosThisWeek || 0}</p>
+                  <p className="text-2xl font-bold">{stats?.recent_videos || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -212,11 +212,11 @@ export function YouTubeContentView() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Bot className="h-4 w-4 text-muted-foreground" />
+                <Bot className="h-4 w-4 text-purple-500" />
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Confianza promedio</p>
                   <p className="text-2xl font-bold">
-                    {Math.round((stats?.averageConfidence || 0) * 100)}%
+                    {Math.round((stats?.average_confidence || 0) * 100)}%
                   </p>
                 </div>
               </div>
@@ -249,7 +249,7 @@ export function YouTubeContentView() {
                   <SelectValue placeholder="Categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  <SelectItem value="all">Todas las playlists</SelectItem>
                   {playlists.map((playlist) => (
                     <SelectItem key={playlist.id} value={playlist.id}>
                       {playlist.name}

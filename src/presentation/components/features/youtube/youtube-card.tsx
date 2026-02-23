@@ -122,20 +122,23 @@ export function YouTubeCard({ content, onContentChange }: YouTubeCardProps) {
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative">
         {/* Thumbnail con overlay de play */}
-        <div className="relative aspect-video bg-muted">
-          <img
-            src={content.thumbnail_url}
-            alt={content.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Button size="sm" variant="secondary" asChild>
-              <a href={content.video_url} target="_blank" rel="noopener noreferrer">
-                <Play className="h-4 w-4 mr-2" />
-                Ver en YouTube
-              </a>
-            </Button>
-          </div>
+        <a
+          href={content.video_url || `https://www.youtube.com/watch?v=${content.video_id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="relative aspect-video bg-muted overflow-hidden">
+            <img
+              src={content.thumbnail_url}
+              alt={content.title}
+              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="bg-red-600 rounded-full p-3 shadow-lg">
+                <Play className="h-5 w-5 text-white fill-white" />
+              </div>
+            </div>
           
           {/* Duration badge */}
           {formatDuration(content.duration) && (
@@ -150,6 +153,7 @@ export function YouTubeCard({ content, onContentChange }: YouTubeCardProps) {
             <div className={`w-2 h-2 rounded-full ${getConfidenceColor(content.confidence_score || 0)}`} />
           </div>
         </div>
+        </a>
 
         {/* Actions dropdown */}
         <div className="absolute top-2 left-2">
@@ -221,7 +225,14 @@ export function YouTubeCard({ content, onContentChange }: YouTubeCardProps) {
         {/* Title and channel */}
         <div className="space-y-2">
           <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
-            {content.title}
+            <a
+              href={content.video_url || `https://www.youtube.com/watch?v=${content.video_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-red-500 transition-colors"
+            >
+              {content.title}
+            </a>
           </h3>
           
           <div className="flex items-center justify-between text-xs text-muted-foreground">
