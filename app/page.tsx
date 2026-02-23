@@ -6,6 +6,7 @@ import { GlassHeader } from "@/components/layout/glass-header.component"
 import { HeroSection } from "@/components/layout/hero-section.component"
 import { ScrollRow } from "@/components/layout/scroll-row.component"
 import { GridView } from "@/src/presentation/components/features/tools/tool-grid.component"
+import { PlaylistCards } from "@/src/presentation/components/features/playlists/playlist-cards.component"
 import { YouTubeDashboard } from "@/src/presentation/components/features/youtube/youtube-dashboard"
 import { ChatBot } from "@/src/presentation/components/ui/chatbot"
 import { usePlaylists, useTools } from "@/src/presentation/hooks/use-supabase.hook"
@@ -168,23 +169,16 @@ export default function Home() {
               </div>
             )}
 
-            {/* Scroll rows - ahora usando GridView para unificar estilo */}
-            {/* Debug info - temporary */}
-            <div className="bg-yellow-100 p-4 rounded text-sm">
-              <p><strong>🚀 LIVE HOOK DEBUG:</strong></p>
-              <p>Tools Loading: {toolsLoading ? 'true' : 'false'}</p>
-              <p>Popular Tools Count: {tools.popularTools?.length || 0}</p>
-              <p>Recent Tools Count: {tools.recentlyAdded?.length || 0}</p>
-              <p>Active Playlist: {activePlaylist || 'none'}</p>
-              <p>Sample Popular Tool: {tools.popularTools?.[0]?.title || 'none'}</p>
-              <p>Sample Recent Tool: {tools.recentlyAdded?.[0]?.title || 'none'}</p>
-              <p>Hook Error: {toolsError || 'none'}</p>
-              <p>Last Check: {new Date().toLocaleTimeString()}</p>
-            </div>
-            {tools.popularTools && tools.popularTools.length > 0 && (
+            {/* Playlist cards — only on home */}
+            {!activePlaylist && (
+              <PlaylistCards playlists={playlists} />
+            )}
+
+            {/* Tools grid — only when a playlist is active */}
+            {activePlaylist && tools.popularTools && tools.popularTools.length > 0 && (
               <GridView
-                title={activePlaylist ? "Tools" : "Popular Tools"}
-                description={activePlaylist ? activeSubject?.description : undefined}
+                title="Tools"
+                description={activeSubject?.description}
                 tools={tools.popularTools}
                 showManagement={true}
                 onToolChanged={handleToolChanged}
