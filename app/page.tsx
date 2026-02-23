@@ -196,7 +196,7 @@ export default function Home() {
             {activePlaylist && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
-                <YouTubeDashboard maxItems={8} showHeader={false} />
+                <YouTubeDashboard maxItems={8} showHeader={false} playlistId={activePlaylist} />
               </div>
             )}
 

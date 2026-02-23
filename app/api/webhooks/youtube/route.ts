@@ -49,11 +49,79 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
+    // === AUTO-CLASIFICACIÓN: asignar playlist_id automáticamente ===
+    let assignedPlaylistId: string | null = payload.playlist_id || null;
+
+    if (!assignedPlaylistId) {
+      // 1. Obtener todas las playlists
+      const { data: playlists } = await supabase
+        .from('playlists')
+        .select('id, name');
+
+      if (playlists && playlists.length > 0) {
+        // 2. Obtener todos los tags de tools agrupados por playlist
+        const { data: tools } = await supabase
+          .from('tools')
+          .select('playlist_id, tags, title');
+
+        // 3. Construir mapa: playlist_id → [keywords]
+        const keywordMap: Record<string, string[]> = {};
+        for (const playlist of playlists) {
+          // Palabras del nombre de la playlist
+          const nameWords = playlist.name.toLowerCase().split(/\s+/);
+          keywordMap[playlist.id] = [...nameWords];
+        }
+        // Añadir tags y títulos de tools
+        for (const tool of (tools || [])) {
+          if (tool.playlist_id && keywordMap[tool.playlist_id]) {
+            const toolKeywords = [
+              ...(tool.tags || []).map((t: string) => t.toLowerCase()),
+              ...tool.title.toLowerCase().split(/\s+/)
+            ];
+            keywordMap[tool.playlist_id].push(...toolKeywords);
+          }
+        }
+
+        // 4. Puntuar cada playlist contra el video
+        const videoText = [
+          payload.title || '',
+          payload.description || '',
+          payload.channel_name || ''
+        ].join(' ').toLowerCase();
+
+        let bestScore = 0;
+        let bestPlaylistId: string | null = null;
+
+        for (const [playlistId, keywords] of Object.entries(keywordMap)) {
+          const uniqueKeywords = [...new Set(keywords)].filter(k => k.length > 2);
+          let score = 0;
+          for (const keyword of uniqueKeywords) {
+            if (videoText.includes(keyword)) score++;
+          }
+          if (score > bestScore) {
+            bestScore = score;
+            bestPlaylistId = playlistId;
+          }
+        }
+
+        if (bestScore > 0) {
+          assignedPlaylistId = bestPlaylistId;
+          console.log(`Auto-clasificado en playlist ${bestPlaylistId} con score ${bestScore}`);
+        } else {
+          console.log('Sin playlist coincidente, guardando sin clasificar');
+        }
+      }
+    }
+
     // Usar valores por defecto para campos requeridos
-    const videoData = getYouTubeContentDefaults(payload);
+    const videoData = getYouTubeContentDefaults({
+      ...payload,
+      playlist_id: assignedPlaylistId
+    });
     
     console.log('=== SAVING TO DATABASE (WITH DEFAULTS) ===');
     console.log('Video data with defaults:', videoData);
+    console.log('Assigned playlist_id:', assignedPlaylistId);
 
     // Insertar en Supabase
     const { data, error } = await supabase
@@ -85,6 +153,7 @@ export async function POST(request: NextRequest) {
       message: 'Video data saved to database successfully',
       data: {
         saved_record: data[0],
+        assigned_playlist_id: assignedPlaylistId,
         timestamp: new Date().toISOString()
       }
     });

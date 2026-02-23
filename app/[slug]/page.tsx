@@ -243,7 +243,7 @@ export default function PlaylistPage({ params }: PlaylistPageProps) {
             {/* YouTube section para páginas de playlist */}
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
-              <YouTubeDashboard maxItems={8} showHeader={false} />
+              <YouTubeDashboard maxItems={8} showHeader={false} playlistId={activePlaylist} />
             </div>
 
             {/* Empty state */}

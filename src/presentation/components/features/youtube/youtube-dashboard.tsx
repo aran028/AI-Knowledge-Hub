@@ -23,14 +23,16 @@ interface YouTubeDashboardProps {
   maxItems?: number
   showHeader?: boolean
   className?: string
+  playlistId?: string | null
 }
 
 export function YouTubeDashboard({ 
   maxItems = 6, 
   showHeader = true, 
-  className = "" 
+  className = "",
+  playlistId = null
 }: YouTubeDashboardProps) {
-  const { content, loading } = useYouTubeContent(undefined, {
+  const { content, loading } = useYouTubeContent(playlistId ?? undefined, {
     limit: maxItems,
   })
   
