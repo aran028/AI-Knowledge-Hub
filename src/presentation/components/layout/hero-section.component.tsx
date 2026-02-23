@@ -5,7 +5,7 @@ import { Play, ChevronLeft, ChevronRight, Zap, ExternalLink } from "lucide-react
 import type { Tool } from "@/shared/types/data"
 
 interface HeroSectionProps {
-  tools: Tool[]
+  readonly tools: Tool[]
 }
 
 export function HeroSection({ tools }: HeroSectionProps) {
@@ -104,7 +104,7 @@ export function HeroSection({ tools }: HeroSectionProps) {
             <div className="flex items-center gap-1.5">
               {tools.map((_, i) => (
                 <button
-                  key={i}
+                  key={`dot-${tools[i]?.id ?? i}`}
                   onClick={() => goTo(i)}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/70"

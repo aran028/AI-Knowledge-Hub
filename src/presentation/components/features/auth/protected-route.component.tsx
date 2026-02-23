@@ -6,11 +6,11 @@ import { useAuth } from "@/hooks/use-auth.hook"
 import { Loader2 } from "lucide-react"
 
 interface ProtectedRouteProps {
-  children: React.ReactNode
+  readonly children: React.ReactNode
 }
 
 // Rutas que no requieren autenticación
-const publicRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password']
+const publicRoutes = new Set(['/auth/login', '/auth/register', '/auth/forgot-password'])
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
@@ -25,18 +25,16 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (!isClient || loading) return
 
-    const isPublicRoute = publicRoutes.includes(pathname)
+    const isPublicRoute = publicRoutes.has(pathname)
     
     // Si no hay usuario y está en una ruta privada, redirigir a login
     if (!user && !isPublicRoute) {
       router.push('/auth/login')
-      return
     }
 
     // Si hay usuario y está en una ruta pública, redirigir a home
     if (user && isPublicRoute) {
       router.push('/')
-      return
     }
   }, [user, loading, pathname, router, isClient])
 
@@ -52,7 +50,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  const isPublicRoute = publicRoutes.includes(pathname)
+  const isPublicRoute = publicRoutes.has(pathname)
   
   // Si no hay usuario y está en una ruta privada, mostrar loading (la redirección está en progreso)
   if (!user && !isPublicRoute) {

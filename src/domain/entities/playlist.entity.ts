@@ -7,10 +7,10 @@ export class PlaylistEntity {
   private _name: string
   private _icon: string
   private _description?: string
-  private _toolIds: Set<ToolId>
+  private readonly _toolIds: Set<ToolId>
   private _createdAt: Date;
   private _updatedAt: Date
-  private _userId?: string
+  private readonly _userId?: string
   private _isPublic: boolean
   private _domainEvents: any[] = []
 

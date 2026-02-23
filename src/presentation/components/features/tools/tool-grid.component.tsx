@@ -4,12 +4,12 @@ import { ToolCard } from "@/src/presentation/components/features/tools/tool-card
 import type { Tool } from "@/shared/types/data"
 
 interface GridViewProps {
-  title: string
-  description?: string
-  tools: Tool[]
-  showManagement?: boolean
-  onToolChanged?: () => void
-  highlightedTools?: string[]
+  readonly title: string
+  readonly description?: string
+  readonly tools: Tool[]
+  readonly showManagement?: boolean
+  readonly onToolChanged?: () => void
+  readonly highlightedTools?: string[]
 }
 
 export function GridView({ title, description, tools, showManagement = false, onToolChanged, highlightedTools = [] }: GridViewProps) {

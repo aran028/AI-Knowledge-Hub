@@ -1,11 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { 
-  Youtube, 
+  Video, 
   TrendingUp, 
   Clock, 
   ArrowRight,
@@ -13,18 +12,19 @@ import {
   Bot
 } from "lucide-react"
 import { useYouTubeContent, useYouTubeStats } from "@/src/presentation/hooks/use-youtube.hook"
-import { usePlaylists } from "@/src/presentation/hooks/use-supabase.hook"
 import { YouTubeCard } from "./youtube-card"
 import { YouTubeSetupGuide } from "./youtube-setup-guide"
 import { YouTubeContent } from "@/shared/config/supabase-auth"
 
 interface YouTubeDashboardProps {
-  maxItems?: number
-  showHeader?: boolean
-  className?: string
-  playlistId?: string | null
-  compact?: boolean
+  readonly maxItems?: number
+  readonly showHeader?: boolean
+  readonly className?: string
+  readonly playlistId?: string | null
+  readonly compact?: boolean
 }
+
+const STAT_SKELETON_IDS = ['stat-a', 'stat-b', 'stat-c']
 
 export function YouTubeDashboard({ 
   maxItems = 6, 
@@ -45,7 +45,7 @@ export function YouTubeDashboard({
         {showHeader && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Youtube className="h-6 w-6 text-red-500" />
+                          <Video className="h-6 w-6 text-red-500" />
               <h2 className="text-xl font-semibold">Contenido de YouTube</h2>
             </div>
             <div className="h-9 w-24 bg-muted rounded animate-pulse" />
@@ -54,8 +54,8 @@ export function YouTubeDashboard({
 
         {/* Stats skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
+          {STAT_SKELETON_IDS.map((id) => (
+            <Card key={id} className="animate-pulse">
               <CardContent className="p-4">
                 <div className="h-4 bg-muted rounded w-1/2 mb-2" />
                 <div className="h-6 bg-muted rounded w-3/4" />
@@ -69,8 +69,8 @@ export function YouTubeDashboard({
           ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
           : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         }>
-          {[...Array(maxItems)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
+          {Array.from({ length: maxItems }, (_, i) => `sk-${i}`).map((id) => (
+            <Card key={id} className="animate-pulse">
               <div className="aspect-video bg-muted" />
               <CardContent className="p-4 space-y-2">
                 <div className="h-4 bg-muted rounded" />
@@ -88,7 +88,7 @@ export function YouTubeDashboard({
       {showHeader && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Youtube className="h-6 w-6 text-red-500" />
+            <Video className="h-6 w-6 text-red-500" />
             <h2 className="text-xl font-semibold">Contenido de YouTube</h2>
           </div>
           <Button variant="ghost" asChild>

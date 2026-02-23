@@ -29,10 +29,11 @@ import { toast } from "@/components/ui/use-toast"
 import type { Playlist } from "@/shared/types/data"
 
 interface PlaylistManagementProps {
-  playlist?: Playlist
-  playlists: Playlist[]
-  onPlaylistChanged?: () => void
-  mode?: "add" | "edit"
+  readonly playlist?: Playlist
+  readonly playlists?: Playlist[]
+  readonly onPlaylistChanged?: () => void
+  readonly mode?: "add" | "edit"
+  readonly children?: React.ReactNode
 }
 
 const iconOptions = [
@@ -47,7 +48,7 @@ const iconOptions = [
   { value: "layers", label: "📋 Layers", icon: "layers" },
 ]
 
-export function PlaylistManagement({ playlist, playlists, onPlaylistChanged, mode = "edit" }: PlaylistManagementProps) {
+export function PlaylistManagement({ playlist, playlists = [], onPlaylistChanged, mode = "edit" }: PlaylistManagementProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -195,7 +196,6 @@ export function PlaylistManagement({ playlist, playlists, onPlaylistChanged, mod
 
   if (mode === "add") {
     return (
-      <>
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2 text-white hover:text-white">
@@ -257,7 +257,6 @@ export function PlaylistManagement({ playlist, playlists, onPlaylistChanged, mod
             </form>
           </DialogContent>
         </Dialog>
-      </>
     )
   }
 

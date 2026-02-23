@@ -5,7 +5,6 @@ import { useState } from "react"
 import { Sidebar } from "@/components/layout/sidebar.component"
 import { GlassHeader } from "@/components/layout/glass-header.component"
 import { HeroSection } from "@/components/layout/hero-section.component"
-import { ScrollRow } from "@/components/layout/scroll-row.component"
 import { GridView } from "@/src/presentation/components/features/tools/tool-grid.component"
 import { PlaylistCards } from "@/src/presentation/components/features/playlists/playlist-cards.component"
 import { YouTubeDashboard } from "@/src/presentation/components/features/youtube/youtube-dashboard"
@@ -77,8 +76,8 @@ export default function Home() {
           <div className="flex-1 rounded-lg bg-card p-4">
             <div className="h-6 w-24 animate-pulse rounded bg-muted mb-4"></div>
             <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-12 animate-pulse rounded bg-muted"></div>
+              {Array.from({ length: 6 }, (_, i) => `s-${i}`).map((id) => (
+                <div key={id} className="h-12 animate-pulse rounded bg-muted"></div>
               ))}
             </div>
           </div>
@@ -87,8 +86,8 @@ export default function Home() {
           <div className="flex-1 p-6 space-y-8">
             <div className="h-8 w-48 animate-pulse rounded bg-muted"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-48 animate-pulse rounded bg-muted"></div>
+              {Array.from({ length: 6 }, (_, i) => `c-${i}`).map((id) => (
+                <div key={id} className="h-48 animate-pulse rounded bg-muted"></div>
               ))}
             </div>
           </div>
