@@ -8,7 +8,6 @@ import {
   Search,
   Library,
   Plus,
-  Heart,
   Brain,
   Code,
   Workflow,
@@ -149,19 +148,6 @@ export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onPlaylis
 
         {isExpanded && (
           <div className="flex-1 overflow-y-auto px-2 pb-2">
-            {/* Liked Tools */}
-            <button
-              className="mb-1 flex w-full items-center gap-3 rounded-md p-2 text-left transition-all duration-300 hover:bg-accent hover:scale-[1.02] hover:shadow-md group"
-            >
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#450AF5] to-[#C4EFD9] lg:size-12 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
-                <Heart className="size-4 text-foreground transition-transform duration-300 group-hover:scale-110" fill="currentColor" />
-              </div>
-              <div className="hidden min-w-0 lg:block">
-                <p className="truncate text-xs font-medium text-foreground group-hover:text-primary transition-colors duration-200">Liked Tools</p>
-                <p className="truncate text-[10px] text-muted-foreground group-hover:text-primary/80 transition-colors duration-200">24 tools</p>
-              </div>
-            </button>
-
             {/* Playlists (Subjects) */}
             {playlists.map((playlist) => (
               <div key={playlist.id} className="group relative">
