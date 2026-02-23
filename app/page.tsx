@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { Sidebar } from "@/components/layout/sidebar.component"
 import { GlassHeader } from "@/components/layout/glass-header.component"
@@ -196,9 +197,14 @@ export default function Home() {
 
             {/* YouTube Dashboard — only on home */}
             {!activePlaylist && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
-                <YouTubeDashboard maxItems={6} />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-foreground">YouTube</h2>
+                  <Link href="/youtube" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Ver todo →
+                  </Link>
+                </div>
+                <YouTubeDashboard maxItems={8} showHeader={false} compact={true} />
               </div>
             )}
 

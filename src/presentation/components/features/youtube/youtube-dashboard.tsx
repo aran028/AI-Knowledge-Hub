@@ -8,7 +8,6 @@ import {
   Youtube, 
   TrendingUp, 
   Clock, 
-  Eye,
   ArrowRight,
   Play,
   Bot
@@ -24,26 +23,21 @@ interface YouTubeDashboardProps {
   showHeader?: boolean
   className?: string
   playlistId?: string | null
+  compact?: boolean
 }
 
 export function YouTubeDashboard({ 
   maxItems = 6, 
   showHeader = true, 
   className = "",
-  playlistId = null
+  playlistId = null,
+  compact = false,
 }: YouTubeDashboardProps) {
   const { content, loading } = useYouTubeContent(playlistId ?? undefined, {
     limit: maxItems,
   })
   
   const { stats } = useYouTubeStats()
-
-  const formatNumber = (num?: number) => {
-    if (!num || typeof num !== 'number' || isNaN(num)) return '0'
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toString()
-  }
 
   if (loading) {
     return (
@@ -71,7 +65,10 @@ export function YouTubeDashboard({
         </div>
 
         {/* Content skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={compact
+          ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+          : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        }>
           {[...Array(maxItems)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <div className="aspect-video bg-muted" />
@@ -111,7 +108,7 @@ export function YouTubeDashboard({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Videos totales</p>
-                  <p className="text-2xl font-bold">{stats?.totalVideos || 0}</p>
+                  <p className="text-2xl font-bold">{stats?.total_videos || 0}</p>
                 </div>
                 <Play className="h-8 w-8 text-blue-500" />
               </div>
@@ -122,10 +119,10 @@ export function YouTubeDashboard({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Visualizaciones</p>
-                  <p className="text-2xl font-bold">{formatNumber(stats?.totalViews)}</p>
+                  <p className="text-sm text-muted-foreground">Añadidos reciente</p>
+                  <p className="text-2xl font-bold">{stats?.recent_videos || 0}</p>
                 </div>
-                <Eye className="h-8 w-8" style={{ color: '#F875AA' }} />
+                <Clock className="h-8 w-8" style={{ color: '#F875AA' }} />
               </div>
             </CardContent>
           </Card>
@@ -134,15 +131,15 @@ export function YouTubeDashboard({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Esta semana</p>
+                  <p className="text-sm text-muted-foreground">Confianza IA</p>
                   <p className="text-2xl font-bold">
-                    {stats?.videosThisWeek || 0}
-                    {(stats?.videosThisWeek || 0) > 0 && (
+                    {Math.round((stats?.average_confidence || 0) * 100)}%
+                    {(stats?.average_confidence || 0) >= 0.8 && (
                       <TrendingUp className="h-4 w-4 inline ml-2" style={{ color: '#F875AA' }} />
                     )}
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-orange-500" />
+                <Bot className="h-8 w-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
@@ -163,9 +160,12 @@ export function YouTubeDashboard({
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={compact
+            ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+            : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          }>
             {content.slice(0, maxItems).map((item: YouTubeContent) => (
-              <YouTubeCard key={item.id} content={item} />
+              <YouTubeCard key={item.id} content={item} showActions={!compact} compact={compact} />
             ))}
           </div>
         </div>
