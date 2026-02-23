@@ -7,12 +7,10 @@ interface GridViewProps {
   readonly title: string
   readonly description?: string
   readonly tools: Tool[]
-  readonly showManagement?: boolean
-  readonly onToolChanged?: () => void
   readonly highlightedTools?: string[]
 }
 
-export function GridView({ title, description, tools, showManagement = false, onToolChanged, highlightedTools = [] }: GridViewProps) {
+export function GridView({ title, description, tools, highlightedTools = [] }: GridViewProps) {
   return (
     <section>
       <div className="mb-4">
@@ -26,8 +24,6 @@ export function GridView({ title, description, tools, showManagement = false, on
           <ToolCard 
             key={tool.id} 
             tool={tool} 
-            showManagement={showManagement}
-            onToolChanged={onToolChanged}
             isHighlighted={highlightedTools.includes(tool.id)}
           />
         ))}

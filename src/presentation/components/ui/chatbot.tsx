@@ -5,7 +5,48 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { MessageCircle, X, Send, Bot, User } from "lucide-react"
+import { MessageCircle, X, Send, Bot, User, Mic, MicOff, Volume2, VolumeX } from "lucide-react"
+
+// Declaraciones TypeScript para Web Speech API
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  grammars: SpeechGrammarList;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  serviceURI: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  addEventListener(type: string, listener: (event: any) => void): void;
+  removeEventListener(type: string, listener: (event: any) => void): void;
+  onstart: ((event: Event) => void) | null;
+  onend: ((event: Event) => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+declare var SpeechRecognition: {
+  prototype: SpeechRecognition;
+  new (): SpeechRecognition;
+};
 
 interface Message {
   id: string
@@ -28,14 +69,61 @@ export function ChatBot({ pageContent }: ChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '¡Hola! 👋 Soy tu asistente para esta plataforma de herramientas AI. Puedo ayudarte con información específica sobre las herramientas disponibles, explicarte las categorías como NLP o Computer Vision, guiarte en la búsqueda, o enseñarte a añadir contenido. ¿Qué te gustaría saber?',
+      text: '¡Hola! 👋 Soy tu asistente para esta plataforma de herramientas AI. Puedo ayudarte con información específica sobre las herramientas disponibles, explicarte las categorías como NLP o Computer Vision, guiarte en la búsqueda, o enseñarte a añadir contenido.\n\n🎤 Puedes hablarme usando el micrófono\n🔊 Mis respuestas las puedes escuchar\n\n¿Qué te gustaría saber?',
       sender: 'bot',
       timestamp: new Date()
     }
   ])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [speechEnabled, setSpeechEnabled] = useState(true)
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Inicializar Speech Recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition
+        const recognitionInstance = new SpeechRecognition()
+        
+        recognitionInstance.continuous = false
+        recognitionInstance.interimResults = false
+        recognitionInstance.lang = 'es-ES'
+
+        recognitionInstance.onstart = () => {
+          setIsListening(true)
+        }
+
+        recognitionInstance.onresult = (event) => {
+          const transcript = event.results[0][0].transcript
+          setInputValue(transcript)
+          setIsListening(false)
+        }
+
+        recognitionInstance.onerror = (event) => {
+          console.error('Error de reconocimiento de voz:', event.error)
+          setIsListening(false)
+          if (event.error === 'not-allowed') {
+            alert('Permiso de micrófono denegado. Por favor, permite el acceso al micrófono para usar la función de voz.')
+          }
+        }
+
+        recognitionInstance.onend = () => {
+          setIsListening(false)
+        }
+
+        setRecognition(recognitionInstance)
+      }
+      
+      // Verificar soporte de Speech Synthesis
+      if (!('speechSynthesis' in window)) {
+        setSpeechEnabled(false)
+      }
+    }
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -44,6 +132,58 @@ export function ChatBot({ pageContent }: ChatBotProps) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Funciones de speech
+  const startListening = () => {
+    if (recognition && !isListening) {
+      try {
+        recognition.start()
+      } catch (error) {
+        console.error('Error al iniciar reconocimiento:', error)
+      }
+    }
+  }
+
+  const stopListening = () => {
+    if (recognition && isListening) {
+      recognition.stop()
+    }
+  }
+
+  const speakText = (text: string) => {
+    if (speechEnabled && 'speechSynthesis' in window) {
+      // Cancelar cualquier speech anterior
+      window.speechSynthesis.cancel()
+      
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'es-ES'
+      utterance.rate = 0.9
+      utterance.pitch = 1
+      utterance.volume = 0.8
+
+      utterance.onstart = () => {
+        setIsSpeaking(true)
+      }
+
+      utterance.onend = () => {
+        setIsSpeaking(false)
+      }
+
+      utterance.onerror = () => {
+        setIsSpeaking(false)
+      }
+
+      window.speechSynthesis.speak(utterance)
+    }
+  }
+
+  const toggleSpeech = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
+    setSpeechEnabled(!speechEnabled)
+  }
 
   const getAIResponse = (userMessage: string): string => {
     const lowercaseMessage = userMessage.toLowerCase()
@@ -491,15 +631,21 @@ Te puedo ayudar con tecnologías como:
 
     // Simular tiempo de respuesta del bot
     setTimeout(() => {
+      const responseText = getAIResponse(userMessage.text)
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: getAIResponse(userMessage.text),
+        text: responseText,
         sender: "bot",
         timestamp: new Date()
       }
 
       setMessages(prev => [...prev, botResponse])
       setIsTyping(false)
+      
+      // Text-to-Speech automático si está habilitado
+      if (speechEnabled) {
+        setTimeout(() => speakText(responseText), 500)
+      }
     }, 1000 + Math.random() * 1000) // 1-2 segundos
   }
 
@@ -570,11 +716,17 @@ Te puedo ayudar con tecnologías como:
                     )}
                   </div>
                   <div
-                    className={`rounded-lg px-3 py-2 text-xs leading-relaxed break-words whitespace-pre-line ${
+                    className={`rounded-lg px-3 py-2 text-xs leading-relaxed break-words whitespace-pre-line cursor-pointer transition-colors ${
                       message.sender === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     }`}
+                    onClick={() => {
+                      if (message.sender === "bot" && speechEnabled && 'speechSynthesis' in window) {
+                        speakText(message.text)
+                      }
+                    }}
+                    title={message.sender === "bot" && speechEnabled ? "Haz clic para escuchar" : undefined}
                   >
                     {message.text}
                   </div>
@@ -612,6 +764,44 @@ Te puedo ayudar con tecnologías como:
             onKeyPress={handleKeyPress}
             className="flex-1 text-xs"
           />
+          
+          {/* Botón de micrófono */}
+          {recognition && (
+            <Button
+              onClick={isListening ? stopListening : startListening}
+              variant={isListening ? "destructive" : "outline"}
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              disabled={isTyping}
+              title={isListening ? "Parar grabación" : "Hablar"}
+            >
+              {isListening ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          
+          {/* Botón de control de audio */}
+          {'speechSynthesis' in window && (
+            <Button
+              onClick={toggleSpeech}
+              variant={speechEnabled ? "outline" : "ghost"}
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              title={speechEnabled ? "Deshabilitar voz" : "Habilitar voz"}
+            >
+              {speechEnabled && isSpeaking ? (
+                <Volume2 className="h-4 w-4 animate-pulse" />
+              ) : speechEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          
           <Button 
             onClick={handleSendMessage}
             size="icon" 
@@ -621,6 +811,18 @@ Te puedo ayudar con tecnologías como:
             <Send className="h-4 w-4" />
           </Button>
         </div>
+        
+        {/* Indicador de reconocimiento de voz */}
+        {isListening && (
+          <div className="mt-2 flex items-center justify-center space-x-2 text-xs text-muted-foreground">
+            <div className="flex space-x-1">
+              <div className="h-2 w-1 animate-pulse rounded-full bg-red-500 [animation-delay:-0.4s]"></div>
+              <div className="h-2 w-1 animate-pulse rounded-full bg-red-500 [animation-delay:-0.2s]"></div>
+              <div className="h-2 w-1 animate-pulse rounded-full bg-red-500"></div>
+            </div>
+            <span>Escuchando...</span>
+          </div>
+        )}
       </CardFooter>
     </Card>
   )

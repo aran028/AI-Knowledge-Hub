@@ -3,18 +3,15 @@
 import { Play } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DynamicImage } from "@/src/presentation/components/ui/dynamic-image"
-import { ToolManagement } from "./tool-management.component"
 import type { Tool } from "@/shared/types/data"
 
 interface ToolCardProps {
   tool: Tool
   variant?: "default" | "hero"
-  showManagement?: boolean
-  onToolChanged?: () => void
   isHighlighted?: boolean
 }
 
-export function ToolCard({ tool, variant = "default", showManagement = false, onToolChanged, isHighlighted = false }: ToolCardProps) {
+export function ToolCard({ tool, variant = "default", isHighlighted = false }: ToolCardProps) {
   const isHero = variant === "hero"
   
   return (
@@ -24,12 +21,6 @@ export function ToolCard({ tool, variant = "default", showManagement = false, on
           <div className={`group relative flex flex-col overflow-hidden rounded-lg bg-card p-4 transition-all duration-300 hover:bg-accent w-full ${
             isHighlighted ? "ring-2 ring-blue-500 ring-opacity-70 bg-blue-50 shadow-lg" : ""
           }`}>
-            {/* Management controls */}
-            {showManagement && (
-              <div className="absolute top-2 right-2 z-50 transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border">
-                <ToolManagement tool={tool} onToolChanged={onToolChanged} />
-              </div>
-            )}
             
             <a
               href={tool.url}

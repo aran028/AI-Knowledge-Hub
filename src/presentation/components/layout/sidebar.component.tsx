@@ -22,7 +22,6 @@ import {
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import type { Playlist } from "@/shared/types/data"
-import { PlaylistManagement } from "../features/playlists/playlist-management.component"
 
 const iconMap: Record<string, React.ReactNode> = {
   brain: <Brain className="size-4" />,
@@ -53,12 +52,12 @@ interface SidebarProps {
   playlists: Playlist[]
   activePlaylist: string | null
   onSelectPlaylist: (id: string | null) => void
-  onPlaylistChanged?: () => void
+
   onSearch?: (query: string) => void
   searchResults?: string[]
 }
 
-export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onPlaylistChanged, onSearch, searchResults = [] }: SidebarProps) {
+export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onSearch, searchResults = [] }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const pathname = usePathname()
@@ -139,11 +138,6 @@ export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onPlaylis
             <Library className="size-6 shrink-0" />
             <span className="hidden lg:inline">Your Library</span>
           </button>
-          <PlaylistManagement mode="add" onPlaylistChanged={onPlaylistChanged}>
-            <button className="hidden rounded-full p-1 text-white transition-colors hover:bg-accent hover:text-white lg:block">
-              <Plus className="size-4" />
-            </button>
-          </PlaylistManagement>
         </div>
 
         {isExpanded && (
@@ -172,13 +166,7 @@ export function Sidebar({ playlists, activePlaylist, onSelectPlaylist, onPlaylis
                     <p className="truncate text-[10px] text-muted-foreground group-hover:text-primary/80 transition-colors duration-200">{playlist.count} tools</p>
                   </div>
                 </button>
-                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-0 group-hover:scale-100">
-                  <PlaylistManagement 
-                    mode="edit" 
-                    playlist={playlist} 
-                    onPlaylistChanged={onPlaylistChanged}
-                  />
-                </div>
+
               </div>
             ))}
           </div>

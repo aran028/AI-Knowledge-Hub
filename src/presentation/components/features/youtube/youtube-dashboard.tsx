@@ -46,7 +46,7 @@ export function YouTubeDashboard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
                           <Video className="h-6 w-6 text-red-500" />
-              <h2 className="text-xl font-semibold">Contenido de YouTube</h2>
+              <h2 className="text-xl font-semibold">Videos de YouTube</h2>
             </div>
             <div className="h-9 w-24 bg-muted rounded animate-pulse" />
           </div>
@@ -89,7 +89,7 @@ export function YouTubeDashboard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Video className="h-6 w-6 text-red-500" />
-            <h2 className="text-xl font-semibold">Contenido de YouTube</h2>
+            <h2 className="text-xl font-semibold">Videos de YouTube</h2>
           </div>
           <Button variant="ghost" asChild>
             <Link href="/youtube" className="flex items-center gap-2">
@@ -103,16 +103,18 @@ export function YouTubeDashboard({
       {/* Quick Stats */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Videos totales</p>
-                  <p className="text-2xl font-bold">{stats?.total_videos || 0}</p>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Link href="/youtube">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Videos totales</p>
+                    <p className="text-2xl font-bold">{stats?.total_videos || 0}</p>
+                  </div>
+                  <Play className="h-8 w-8 text-blue-500" />
                 </div>
-                <Play className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
+              </CardContent>
+            </Link>
           </Card>
 
           <Card>

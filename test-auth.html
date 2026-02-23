@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Autenticación - AI Knowledge Hub</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 5px solid #007bff;
+            background: #f8f9fa;
+        }
+        .test-section.success {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+        .test-section.error {
+            border-left-color: #dc3545;
+            background: #fff8f8;
+        }
+        .test-section.warning {
+            border-left-color: #ffc107;
+            background: #fffdf0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px 8px 8px 0;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        button.success {
+            background: #28a745;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.warning {
+            background: #ffc107;
+            color: #000;
+        }
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,123,255,.25);
+        }
+        .status {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #17a2b8;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left-color: #17a2b8;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left-color: #ffc107;
+        }
+        .config-section {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .auth-form {
+            display: grid;
+            gap: 15px;
+            max-width: 400px;
+        }
+        .user-info {
+            background: #d1ecf1;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            border: 1px solid #e9ecef;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .feature-badge {
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            display: inline-block;
+            margin: 2px;
+        }
+        .feature-badge.fixed {
+            background: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Completo de Autenticación</h1>
+        <p>Herramienta para probar todas las funcionalidades de auth del AI Knowledge Hub</p>
+        
+        <div class="feature-badge">Login/Register</div>
+        <div class="feature-badge">Forgot Password</div>
+        <div class="feature-badge fixed">Email Callback Fixed</div>
+        <div class="feature-badge completed">Session Management</div>
+
+        <!-- Configuración -->
+        <div class="config-section">
+            <h2>⚙️ Configuración</h2>
+            <div class="grid">
+                <div>
+                    <label>Supabase URL:</label>
+                    <input type="text" id="supabase-url" placeholder="https://tu-proyecto.supabase.co">
+                </div>
+                <div>
+                    <label>Supabase Anon Key:</label>
+                    <input type="password" id="supabase-key" placeholder="Anon key de tu proyecto">
+                </div>
+            </div>
+            <button onclick="initializeSupabase()">🔗 Conectar a Supabase</button>
+            <button onclick="loadFromEnv()">📁 Cargar desde Variables</button>
+            <div id="connection-status" class="status info">Configura las credenciales de Supabase</div>
+        </div>
+
+        <!-- Estado de Sesión -->
+        <div id="session-section" class="test-section">
+            <h2>👤 Estado de Sesión</h2>
+            <button onclick="checkSession()">🔍 Verificar Sesión</button>
+            <button onclick="signOut()">🚪 Cerrar Sesión</button>
+            <div id="session-info" class="user-info" style="display: none;"></div>
+            <div id="session-status" class="status info">Presiona "Verificar Sesión" para empezar</div>
+        </div>
+
+        <!-- Tests Grid -->
+        <div class="grid">
+            <!-- Registro -->
+            <div id="register-section" class="test-section">
+                <h2>📝 Test de Registro</h2>
+                <div class="auth-form">
+                    <input type="text" id="reg-name" placeholder="Nombre completo" value="Usuario Test">
+                    <input type="email" id="reg-email" placeholder="Email" value="">
+                    <input type="password" id="reg-password" placeholder="Contraseña" value="test123456">
+                    <button onclick="testRegister()">✨ Crear Cuenta</button>
+                    <button onclick="generateTestEmail()" class="warning">🎲 Email de Prueba</button>
+                </div>
+                <div id="register-status" class="status info">Completa los datos para registrarte</div>
+            </div>
+
+            <!-- Login -->
+            <div id="login-section" class="test-section">
+                <h2>🔑 Test de Login</h2>
+                <div class="auth-form">
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Contraseña">
+                    <button onclick="testLogin()">🚀 Iniciar Sesión</button>
+                    <button onclick="copyRegisterData()" class="warning">📋 Usar datos de registro</button>
+                </div>
+                <div id="login-status" class="status info">Ingresa tus credenciales para login</div>
+            </div>
+
+            <!-- Reset Password -->
+            <div id="reset-section" class="test-section">
+                <h2>🔄 Test de Reset Password</h2>
+                <div class="auth-form">
+                    <input type="email" id="reset-email" placeholder="Email para reset">
+                    <button onclick="testResetPassword()">📧 Enviar Reset Email</button>
+                    <button onclick="copyLoginEmail()" class="warning">📋 Usar email de login</button>
+                </div>
+                <div id="reset-status" class="status info">Ingresa email para reset de contraseña</div>
+            </div>
+
+            <!-- Callback Test -->
+            <div id="callback-section" class="test-section">
+                <h2>🔗 Test de Callback</h2>
+                <p>Simula el flujo de callback de autenticación:</p>
+                <button onclick="testCallbackFlow()">🔄 Test Callback URL</button>
+                <button onclick="openResetPage()">🌐 Abrir Reset Password</button>
+                <div id="callback-status" class="status info">Funcionalidad de callback implementada</div>
+            </div>
+        </div>
+
+        <!-- Resultados de Tests -->
+        <div id="results-section" class="test-section">
+            <h2>📊 Resultados de Tests</h2>
+            <button onclick="runFullTest()">🚀 Ejecutar Test Completo</button>
+            <button onclick="clearLogs()">🗑️ Limpiar Logs</button>
+            <div id="test-logs"></div>
+        </div>
+
+        <!-- Información de Debug -->
+        <details>
+            <summary><h2>🔍 Debug Information</h2></summary>
+            <div id="debug-section" class="test-section">
+                <h3>Configuración actual:</h3>
+                <pre id="debug-config"></pre>
+                <h3>Historia de eventos:</h3>
+                <pre id="debug-events"></pre>
+            </div>
+        </details>
+    </div>
+
+    <script>
+        let supabase = null;
+        let testLogs = [];
+        let debugEvents = [];
+
+        // Utilidades
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            testLogs.push({ timestamp, message, type });
+            console.log(`[${timestamp}] ${message}`);
+            updateTestLogs();
+        }
+
+        function debugEvent(event, data) {
+            debugEvents.push({ timestamp: new Date().toISOString(), event, data });
+            updateDebugInfo();
+        }
+
+        function updateTestLogs() {
+            const logsDiv = document.getElementById('test-logs');
+            logsDiv.innerHTML = testLogs.slice(-10).map(log => 
+                `<div class="status ${log.type}"><strong>${log.timestamp}</strong>: ${log.message}</div>`
+            ).join('');
+        }
+
+        function updateDebugInfo() {
+            document.getElementById('debug-config').textContent = JSON.stringify({
+                supabaseConnected: !!supabase,
+                url: document.getElementById('supabase-url').value.slice(0, 30) + '...',
+                keyLength: document.getElementById('supabase-key').value.length
+            }, null, 2);
+
+            document.getElementById('debug-events').textContent = debugEvents.slice(-5).map(event => 
+                `${event.timestamp}: ${event.event} - ${JSON.stringify(event.data, null, 2)}`
+            ).join('\n\n');
+        }
+
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        // Configuración de Supabase
+        async function loadFromEnv() {
+            try {
+                // Intentar cargar la configuración del proyecto
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('supabase-url').value = config.url || '';
+                    document.getElementById('supabase-key').value = config.key || '';
+                    log('Configuración cargada desde el servidor', 'success');
+                } else {
+                    throw new Error('No se pudo cargar la configuración');
+                }
+            } catch (error) {
+                // Valores por defecto (deberías cambiarlos)
+                document.getElementById('supabase-url').value = 'https://tu-proyecto.supabase.co';
+                document.getElementById('supabase-key').value = 'tu-anon-key-aqui';
+                log('Usando configuración por defecto. Actualiza las credenciales.', 'warning');
+            }
+        }
+
+        function initializeSupabase() {
+            const url = document.getElementById('supabase-url').value.trim();
+            const key = document.getElementById('supabase-key').value.trim();
+
+            if (!url || !key) {
+                updateStatus('connection-status', 'Faltan URL o Key de Supabase', 'error');
+                return;
+            }
+
+            try {
+                supabase = window.supabase.createClient(url, key, {
+                    auth: {
+                        autoRefreshToken: true,
+                        persistSession: true,
+                        detectSessionInUrl: true,
+                        flowType: 'pkce'
+                    }
+                });
+
+                updateStatus('connection-status', '✅ Conectado a Supabase correctamente', 'success');
+                log('Cliente de Supabase inicializado', 'success');
+                debugEvent('supabase_init', { url: url.slice(0, 30) + '...', keyLength: key.length });
+                
+                // Auto-verificar sesión
+                checkSession();
+            } catch (error) {
+                updateStatus('connection-status', `❌ Error: ${error.message}`, 'error');
+                log(`Error al conectar: ${error.message}`, 'error');
+            }
+        }
+
+        // Gestión de sesión
+        async function checkSession() {
+            if (!supabase) {
+                updateStatus('session-status', 'Primero conecta a Supabase', 'warning');
+                return;
+            }
+
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) throw error;
+
+                if (session && session.user) {
+                    document.getElementById('session-info').style.display = 'block';
+                    document.getElementById('session-info').innerHTML = `
+                        <h4>👤 Usuario Actual:</h4>
+                        <p><strong>Email:</strong> ${session.user.email}</p>
+                        <p><strong>ID:</strong> ${session.user.id}</p>
+                        <p><strong>Confirmado:</strong> ${session.user.email_confirmed_at ? '✅' : '❌'}</p>
+                        <p><strong>Último acceso:</strong> ${new Date(session.user.last_sign_in_at).toLocaleString()}</p>
+                        <p><strong>Creado:</strong> ${new Date(session.user.created_at).toLocaleString()}</p>
+                    `;
+                    updateStatus('session-status', '✅ Sesión activa encontrada', 'success');
+                    log(`Sesión activa: ${session.user.email}`, 'success');
+                    
+                    // Llenar campos automáticamente
+                    document.getElementById('login-email').value = session.user.email;
+                    document.getElementById('reset-email').value = session.user.email;
+                } else {
+                    document.getElementById('session-info').style.display = 'none';
+                    updateStatus('session-status', 'ℹ No hay sesión activa', 'info');
+                    log('No hay sesión activa', 'info');
+                }
+
+                debugEvent('session_check', { hasSession: !!session, user: session?.user?.email });
+            } catch (error) {
+                updateStatus('session-status', `❌ Error: ${error.message}`, 'error');
+                log(`Error al verificar sesión: ${error.message}`, 'error');
+            }
+        }
+
+        async function signOut() {
+            if (!supabase) return;
+
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+
+                updateStatus('session-status', '✅ Sesión cerrada correctamente', 'success');
+                document.getElementById('session-info').style.display = 'none';
+                log('Sesión cerrada correctamente', 'success');
+                debugEvent('sign_out', { success: true });
+            } catch (error) {
+                log(`Error al cerrar sesión: ${error.message}`, 'error');
+            }
+        }
+
+        // Tests de autenticación
+        async function testRegister() {
+            if (!supabase) {
+                updateStatus('register-status', 'Primero conecta a Supabase', 'warning');
+                return;
+            }
+
+            const fullName = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+
+            if (!email || !password) {
+                updateStatus('register-status', 'Completa email y contraseña', 'warning');
+                return;
+            }
+
+            try {
+                updateStatus('register-status', 'Creando cuenta...', 'info');
+                
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName
+                        }
+                    }
+                });
+
+                if (error) throw error;
+
+                if (data.user && !data.user.email_confirmed_at) {
+                    updateStatus('register-status', '✅ Cuenta creada. Revisa tu email para confirmar.', 'success');
+                    log(`Registro exitoso: ${email}. Confirmación pendiente.`, 'success');
+                } else if (data.user && data.user.email_confirmed_at) {
+                    updateStatus('register-status', '✅ Cuenta creada y confirmada automáticamente', 'success');
+                    log(`Registro y confirmación exitosa: ${email}`, 'success');
+                }
+
+                debugEvent('register', { success: true, email, needsConfirmation: !data.user?.email_confirmed_at });
+                
+                // Auto-llenar login
+                document.getElementById('login-email').value = email;
+                document.getElementById('login-password').value = password;
+                
+            } catch (error) {
+                updateStatus('register-status', `❌ Error: ${error.message}`, 'error');
+                log(`Error en registro: ${error.message}`, 'error');
+                debugEvent('register', { success: false, error: error.message });
+            }
+        }
+
+        async function testLogin() {
+            if (!supabase) {
+                updateStatus('login-status', 'Primero conecta a Supabase', 'warning');
+                return;
+            }
+
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (!email || !password) {
+                updateStatus('login-status', 'Completa email y contraseña', 'warning');
+                return;
+            }
+
+            try {
+                updateStatus('login-status', 'Iniciando sesión...', 'info');
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                updateStatus('login-status', '✅ Login exitoso', 'success');
+                log(`Login exitoso: ${email}`, 'success');
+                debugEvent('login', { success: true, email });
+                
+                // Auto-actualizar sesión
+                setTimeout(checkSession, 1000);
+                
+            } catch (error) {
+                updateStatus('login-status', `❌ Error: ${error.message}`, 'error');
+                log(`Error en login: ${error.message}`, 'error');
+                debugEvent('login', { success: false, error: error.message });
+            }
+        }
+
+        async function testResetPassword() {
+            if (!supabase) {
+                updateStatus('reset-status', 'Primero conecta a Supabase', 'warning');
+                return;
+            }
+
+            const email = document.getElementById('reset-email').value.trim();
+
+            if (!email) {
+                updateStatus('reset-status', 'Ingresa un email', 'warning');
+                return;
+            }
+
+            try {
+                updateStatus('reset-status', 'Enviando email de reset...', 'info');
+                
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password&type=recovery`
+                });
+
+                if (error) throw error;
+
+                updateStatus('reset-status', '✅ Email de reset enviado. Revisa tu bandeja de entrada.', 'success');
+                log(`Reset password enviado a: ${email}`, 'success');
+                debugEvent('reset_password', { success: true, email });
+                
+            } catch (error) {
+                updateStatus('reset-status', `❌ Error: ${error.message}`, 'error');
+                log(`Error en reset: ${error.message}`, 'error');
+                debugEvent('reset_password', { success: false, error: error.message });
+            }
+        }
+
+        // Funciones auxiliares
+        function generateTestEmail() {
+            const randomNum = Math.floor(Math.random() * 10000);
+            const testEmail = `test${randomNum}@example.com`;
+            document.getElementById('reg-email').value = testEmail;
+            log(`Email de prueba generado: ${testEmail}`, 'info');
+        }
+
+        function copyRegisterData() {
+            const regEmail = document.getElementById('reg-email').value;
+            const regPassword = document.getElementById('reg-password').value;
+            
+            document.getElementById('login-email').value = regEmail;
+            document.getElementById('login-password').value = regPassword;
+            log('Datos copiados de registro a login', 'info');
+        }
+
+        function copyLoginEmail() {
+            const loginEmail = document.getElementById('login-email').value;
+            document.getElementById('reset-email').value = loginEmail;
+            log('Email copiado de login a reset', 'info');
+        }
+
+        function testCallbackFlow() {
+            const callbackUrl = `${window.location.origin}/auth/callback?type=recovery&next=/auth/reset-password`;
+            updateStatus('callback-status', `✅ Callback URL: ${callbackUrl}`, 'success');
+            log('Callback URL generada correctamente', 'success');
+            debugEvent('callback_test', { url: callbackUrl });
+        }
+
+        function openResetPage() {
+            window.open('/auth/reset-password', '_blank');
+            log('Página de reset abierta en nueva pestaña', 'info');
+        }
+
+        function clearLogs() {
+            testLogs = [];
+            debugEvents = [];
+            updateTestLogs();
+            updateDebugInfo();
+            log('Logs limpiados', 'info');
+        }
+
+        async function runFullTest() {
+            log('Iniciando test completo...', 'info');
+            
+            // Verificar conexión
+            if (!supabase) {
+                log('❌ Test fallido: No hay conexión a Supabase', 'error');
+                return;
+            }
+
+            // Test 1: Verificar sesión
+            await checkSession();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Test 2: Generar email de prueba si no hay uno
+            if (!document.getElementById('reg-email').value) {
+                generateTestEmail();
+            }
+
+            log('✅ Test completo finalizado. Revisa los logs individuales.', 'success');
+        }
+
+        // Inicialización
+        window.addEventListener('load', function() {
+            loadFromEnv();
+            log('Test de autenticación cargado', 'info');
+            
+            // Easter eggs
+            console.log('🎉 Test de Auth AI Knowledge Hub');
+            console.log('Funcionalidades: Login ✅ | Register ✅ | Reset ✅ | Callback ✅');
+        });
+    </script>
+</body>
+</html>

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, Bell, LogOut, Settings, ExternalLink, Sparkles, Brain, Code2, Zap } from "lucide-react"
-import { AddToolDialog } from "@/components/features/tools/add-tool-dialog.component"
 import { useAuth } from "@/hooks/use-auth.hook"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export function GlassHeader({ onToolAdded }: { onToolAdded?: () => void }) {
+export function GlassHeader() {
   const [scrollOpacity, setScrollOpacity] = useState(0)
   const [canGoBack, setCanGoBack] = useState(false)
   const [canGoForward, setCanGoForward] = useState(false)
@@ -175,7 +174,6 @@ export function GlassHeader({ onToolAdded }: { onToolAdded?: () => void }) {
 
       {/* Right side */}
       <div className="flex items-center gap-3">
-        <AddToolDialog onToolAdded={onToolAdded} />
         
         {/* Explore AI Sites Menu */}
         <div className="relative">

@@ -20,7 +20,14 @@ Esta aplicación ahora está configurada para usar Supabase como base de datos. 
 2. En **Auth Providers**, asegúrate de que **Email** esté habilitado
 3. Configura las URLs de redirección en **URL Configuration**:
    - Site URL: `http://localhost:3000` (para desarrollo)
-   - Redirect URLs: `http://localhost:3000/auth/callback`
+   - Redirect URLs: 
+     ```
+     http://localhost:3000/auth/callback
+     https://tu-dominio.vercel.app/auth/callback
+     ```
+4. En **Email Templates**, personaliza los mensajes si lo deseas:
+   - **Reset Password**: El enlace debe apuntar a `{{ .SiteURL }}/auth/callback?type=recovery`
+   - **Confirm Signup**: El enlace debe apuntar a `{{ .SiteURL }}/auth/callback?type=signup`
 
 ### Configurar las variables de entorno
 1. Ve a **Settings > API** en tu proyecto de Supabase

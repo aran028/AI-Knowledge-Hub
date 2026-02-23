@@ -52,9 +52,9 @@ export function YouTubeCard({ content, onContentChange, showActions = true, comp
     const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/)
     if (!match) return duration
     
-    const hours = match[1] ? parseInt(match[1]) : 0
-    const minutes = match[2] ? parseInt(match[2]) : 0
-    const seconds = match[3] ? parseInt(match[3]) : 0
+    const hours = match[1] ? Number.parseInt(match[1]) : 0
+    const minutes = match[2] ? Number.parseInt(match[2]) : 0
+    const seconds = match[3] ? Number.parseInt(match[3]) : 0
     
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
@@ -156,10 +156,17 @@ export function YouTubeCard({ content, onContentChange, showActions = true, comp
 
         {/* Info */}
         <div className="flex flex-col gap-1.5 p-3 flex-1">
-          {/* Title */}
-          <h3 className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-red-500 transition-colors">
-            {content.title}
-          </h3>
+          {/* Title with tag */}
+          <div className="space-y-1">
+            <h3 className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-red-500 transition-colors">
+              {content.title}
+            </h3>
+            {content.tags && (
+              <span className="inline-block text-[9px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-medium">
+                {content.tags.split(',')[0]?.trim() || 'Video'}
+              </span>
+            )}
+          </div>
 
           {/* Channel + date */}
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
@@ -342,6 +349,12 @@ export function YouTubeCard({ content, onContentChange, showActions = true, comp
 
         {/* Category and tools */}
         <div className="flex flex-wrap gap-1 mt-3">
+          {/* Primary tag */}
+          {content.tags && (
+            <Badge variant="default" className="text-xs bg-primary text-primary-foreground">
+              {content.tags.split(',')[0]?.trim() || 'Video'}
+            </Badge>
+          )}
           {content.playlist && (
             <Badge variant="outline" className="text-xs">
               {content.playlist.name}

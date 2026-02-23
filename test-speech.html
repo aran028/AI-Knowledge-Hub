@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Funcionalidades de Voz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+        }
+        .supported {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+        .not-supported {
+            border-color: #dc3545;
+            background-color: #fff8f8;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .recording {
+            background: #dc3545 !important;
+        }
+        .speaking {
+            background: #ffc107 !important;
+            color: #000;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Test de Funcionalidades de Voz para AI Knowledge Hub</h1>
+        
+        <div id="browser-info">
+            <h2>📊 Información del Navegador</h2>
+            <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+            <p><strong>Idioma:</strong> <span id="language"></span></p>
+        </div>
+
+        <!-- Speech Recognition Test -->
+        <div id="stt-section" class="test-section">
+            <h2>🎤 Speech-to-Text (Reconocimiento de Voz)</h2>
+            <div id="stt-support"></div>
+            <div id="stt-controls">
+                <button id="startBtn" onclick="startRecognition()">Iniciar Grabación</button>
+                <button id="stopBtn" onclick="stopRecognition()" disabled>Parar Grabación</button>
+            </div>
+            <input type="text" id="recognized-text" placeholder="El texto reconocido aparecerá aquí..." readonly>
+            <div id="stt-status" class="status info">Presiona "Iniciar Grabación" para probar</div>
+        </div>
+
+        <!-- Text-to-Speech Test -->
+        <div id="tts-section" class="test-section">
+            <h2>🔊 Text-to-Speech (Síntesis de Voz)</h2>
+            <div id="tts-support"></div>
+            <div id="tts-controls">
+                <input type="text" id="text-to-speak" value="Hola, soy tu asistente AI de la plataforma AI Knowledge Hub. Puedo ayudarte con preguntas sobre tecnología." placeholder="Escribe texto para convertir a voz...">
+                <button id="speakBtn" onclick="speakText()">Hablar Texto</button>
+                <button id="pauseBtn" onclick="pauseSpeech()" disabled>Pausar</button>
+                <button id="stopSpeechBtn" onclick="stopSpeech()" disabled>Parar</button>
+            </div>
+            <div>
+                <label>Velocidad: <input type="range" id="rate" min="0.5" max="2" value="0.9" step="0.1" oninput="updateRate()"></label>
+                <span id="rateValue">0.9</span>
+            </div>
+            <div>
+                <label>Tono: <input type="range" id="pitch" min="0" max="2" value="1" step="0.1" oninput="updatePitch()"></label>
+                <span id="pitchValue">1.0</span>
+            </div>
+            <div id="tts-status" class="status info">Escribe texto y presiona "Hablar Texto"</div>
+        </div>
+
+        <!-- Voices List -->
+        <div id="voices-section" class="test-section">
+            <h2>🗣️ Voces Disponibles</h2>
+            <select id="voice-select">
+                <option value="">Cargando voces...</option>
+            </select>
+            <div id="voices-info"></div>
+        </div>
+
+        <!-- Test Results -->
+        <div id="results" class="test-section">
+            <h2>📋 Resultados del Test</h2>
+            <div id="compatibility-results"></div>
+        </div>
+    </div>
+
+    <script>
+        let recognition;
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkBrowserInfo();
+            checkSpeechRecognition();
+            checkTextToSpeech();
+            loadVoices();
+        });
+
+        function checkBrowserInfo() {
+            document.getElementById('userAgent').textContent = navigator.userAgent;
+            document.getElementById('language').textContent = navigator.language;
+        }
+
+        function checkSpeechRecognition() {
+            const sttSection = document.getElementById('stt-section');
+            const sttSupport = document.getElementById('stt-support');
+            
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                sttSection.className = 'test-section supported';
+                sttSupport.innerHTML = '✅ <strong>Speech Recognition SOPORTADO</strong>';
+                
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.lang = 'es-ES';
+
+                recognition.onstart = function() {
+                    updateSTTStatus('Escuchando...', 'info');
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    document.getElementById('startBtn').class = 'recording';
+                };
+
+                recognition.onerror = function(event) {
+                    updateSTTStatus('Error: ' + event.error, 'error');
+                    resetSTTButtons();
+                };
+
+                recognition.onend = function() {
+                    updateSTTStatus('Grabación terminada', 'info');
+                    resetSTTButtons();
+                };
+
+                recognition.onresult = function(event) {
+                    let finalTranscript = '';
+                    let interimTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    document.getElementById('recognized-text').value = finalTranscript + interimTranscript;
+                    
+                    if (finalTranscript) {
+                        updateSTTStatus('✅ Texto reconocido correctamente', 'success');
+                    }
+                };
+            } else {
+                sttSection.className = 'test-section not-supported';
+                sttSupport.innerHTML = '❌ <strong>Speech Recognition NO SOPORTADO</strong>';
+                document.getElementById('stt-controls').style.display = 'none';
+                updateSTTStatus('Tu navegador no soporta Speech Recognition', 'error');
+            }
+        }
+
+        function checkTextToSpeech() {
+            const ttsSection = document.getElementById('tts-section');
+            const ttsSupport = document.getElementById('tts-support');
+            
+            if ('speechSynthesis' in window) {
+                ttsSection.className = 'test-section supported';
+                ttsSupport.innerHTML = '✅ <strong>Text-to-Speech SOPORTADO</strong>';
+            } else {
+                ttsSection.className = 'test-section not-supported';
+                ttsSupport.innerHTML = '❌ <strong>Text-to-Speech NO SOPORTADO</strong>';
+                document.getElementById('tts-controls').style.display = 'none';
+                updateTTSStatus('Tu navegador no soporta Text-to-Speech', 'error');
+            }
+        }
+
+        function startRecognition() {
+            if (recognition) {
+                document.getElementById('recognized-text').value = '';
+                recognition.start();
+            }
+        }
+
+        function stopRecognition() {
+            if (recognition) {
+                recognition.stop();
+            }
+        }
+
+        function resetSTTButtons() {
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        function speakText() {
+            if ('speechSynthesis' in window) {
+                const text = document.getElementById('text-to-speak').value;
+                if (!text) return;
+
+                // Stop any current speech
+                speechSynthesis.cancel();
+
+                currentUtterance = new SpeechSynthesisUtterance(text);
+                currentUtterance.lang = 'es-ES';
+                currentUtterance.rate = parseFloat(document.getElementById('rate').value);
+                currentUtterance.pitch = parseFloat(document.getElementById('pitch').value);
+                
+                const selectedVoice = document.getElementById('voice-select').value;
+                if (selectedVoice) {
+                    const voices = speechSynthesis.getVoices();
+                    currentUtterance.voice = voices.find(voice => voice.name === selectedVoice);
+                }
+
+                currentUtterance.onstart = function() {
+                    updateTTSStatus('🔊 Reproduciendo...', 'info');
+                    document.getElementById('speakBtn').disabled = true;
+                    document.getElementById('pauseBtn').disabled = false;
+                    document.getElementById('stopSpeechBtn').disabled = false;
+                };
+
+                currentUtterance.onend = function() {
+                    updateTTSStatus('✅ Reproducción completada', 'success');
+                    resetTTSButtons();
+                };
+
+                currentUtterance.onerror = function(event) {
+                    updateTTSStatus('❌ Error: ' + event.error, 'error');
+                    resetTTSButtons();
+                };
+
+                speechSynthesis.speak(currentUtterance);
+            }
+        }
+
+        function pauseSpeech() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.pause();
+                updateTTSStatus('⏸️ Pausado', 'info');
+            }
+        }
+
+        function stopSpeech() {
+            speechSynthesis.cancel();
+            updateTTSStatus('⏹️ Detenido', 'info');
+            resetTTSButtons();
+        }
+
+        function resetTTSButtons() {
+            document.getElementById('speakBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopSpeechBtn').disabled = true;
+        }
+
+        function updateRate() {
+            const rate = document.getElementById('rate').value;
+            document.getElementById('rateValue').textContent = rate;
+        }
+
+        function updatePitch() {
+            const pitch = document.getElementById('pitch').value;
+            document.getElementById('pitchValue').textContent = pitch;
+        }
+
+        function loadVoices() {
+            const voiceSelect = document.getElementById('voice-select');
+            const voicesInfo = document.getElementById('voices-info');
+            
+            function populateVoices() {
+                const voices = speechSynthesis.getVoices();
+                voiceSelect.innerHTML = '<option value="">Voz por defecto</option>';
+                
+                let spanishVoices = 0;
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.name;
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    voiceSelect.appendChild(option);
+                    
+                    if (voice.lang.startsWith('es')) {
+                        spanishVoices++;
+                    }
+                });
+                
+                voicesInfo.innerHTML = `
+                    <p><strong>Total de voces:</strong> ${voices.length}</p>
+                    <p><strong>Voces en español:</strong> ${spanishVoices}</p>
+                `;
+            }
+
+            populateVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = populateVoices;
+            }
+        }
+
+        function updateSTTStatus(message, type) {
+            const status = document.getElementById('stt-status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function updateTTSStatus(message, type) {
+            const status = document.getElementById('tts-status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+    </script>
+</body>
+</html>

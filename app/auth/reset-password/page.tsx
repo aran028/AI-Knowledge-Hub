@@ -34,6 +34,10 @@ function ResetPasswordForm() {
     if (urlError) {
       if (errorCode === 'otp_expired' || errorDescription?.includes('expired')) {
         setError('El enlace de restablecimiento ha expirado. Solicita un nuevo enlace.')
+      } else if (errorCode === 'exchange_failed') {
+        setError('Error al procesar el enlace de restablecimiento. Verifica que uses el enlace más reciente.')
+      } else if (errorCode === 'callback_error') {
+        setError('Error en el proceso de autenticación. Intenta solicitar un nuevo enlace.')
       } else if (errorDescription?.includes('invalid')) {
         setError('El enlace de restablecimiento no es válido. Solicita un nuevo enlace.')
       } else {

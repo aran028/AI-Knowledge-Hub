@@ -17,23 +17,11 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<{tools: string[], playlists: string[]}>({tools: [], playlists: []})
   
   // Obtener datos de Supabase
-  const { playlists, loading: playlistsLoading, error: playlistsError, refetch: refetchPlaylists } = usePlaylists()
+  const { playlists, loading: playlistsLoading, error: playlistsError } = usePlaylists()
   
-  const { tools, loading: toolsLoading, error: toolsError, refetch: refetchTools } = useTools(activePlaylist)
+  const { tools, loading: toolsLoading, error: toolsError } = useTools(activePlaylist)
 
   const activeSubject = playlists.find((p) => p.id === activePlaylist)
-
-  // Handler para cuando se modifica una playlist
-  const handlePlaylistChanged = () => {
-    refetchPlaylists()
-    refetchTools()
-  }
-
-  // Handler para cuando se modifica una herramienta  
-  const handleToolChanged = () => {
-    refetchTools()
-    refetchPlaylists() // Para actualizar el count de las playlists
-  }
 
   // Handler para búsqueda
   const handleSearch = (query: string) => {
@@ -123,7 +111,6 @@ export default function Home() {
         playlists={playlists}
         activePlaylist={activePlaylist}
         onSelectPlaylist={setActivePlaylist}
-        onPlaylistChanged={handlePlaylistChanged}
         onSearch={handleSearch}
         searchResults={searchResults.playlists}
       />
@@ -134,7 +121,7 @@ export default function Home() {
           id="main-scroll"
           className="custom-scrollbar flex-1 overflow-y-auto"
         >
-          <GlassHeader onToolAdded={handleToolChanged} />
+          <GlassHeader />
 
           <div className="flex flex-col gap-10 px-6 pb-32">
             {/* Search results indicator */}
@@ -156,7 +143,7 @@ export default function Home() {
             {activePlaylist && activeSubject && (
               <div className="pt-8">
                 <p className="text-xs font-bold uppercase tracking-widest text-primary">
-                  Subject
+                  Playlist
                 </p>
                 <h1 className="mt-1 text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
                   {activeSubject.name}
@@ -180,8 +167,6 @@ export default function Home() {
                 title="Tools"
                 description={activeSubject?.description}
                 tools={tools.popularTools}
-                showManagement={true}
-                onToolChanged={handleToolChanged}
                 highlightedTools={searchResults.tools}
               />
             )}
@@ -189,7 +174,12 @@ export default function Home() {
             {/* YouTube section para páginas de playlist */}
             {activePlaylist && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Videos de YouTube</h2>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Videos analizados y clasificados según la playlist con el webhook de n8n
+                  </p>
+                </div>
                 <YouTubeDashboard maxItems={8} showHeader={false} playlistId={activePlaylist} />
               </div>
             )}

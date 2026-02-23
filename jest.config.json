@@ -1,0 +1,33 @@
+{
+  "testEnvironment": "jsdom",
+  "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/$1",
+    "^@/components/(.*)$": "<rootDir>/components/$1",
+    "^@/src/(.*)$": "<rootDir>/src/$1",
+    "^@/shared/(.*)$": "<rootDir>/shared/$1",
+    "^@/app/(.*)$": "<rootDir>/app/$1",
+    "^@/hooks/(.*)$": "<rootDir>/hooks/$1",
+    "^@/lib/(.*)$": "<rootDir>/lib/$1"
+  },
+  "testPathIgnorePatterns": [
+    "<rootDir>/.next/",
+    "<rootDir>/node_modules/"
+  ],
+  "transform": {
+    "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", {
+      "presets": [
+        ["@babel/preset-env", { "targets": { "node": "current" } }],
+        ["@babel/preset-react", { "runtime": "automatic" }]
+      ]
+    }]
+  },
+  "collectCoverageFrom": [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "app/**/*.{js,jsx,ts,tsx}",
+    "components/**/*.{js,jsx,ts,tsx}",
+    "!**/*.d.ts",
+    "!**/node_modules/**"
+  ],
+  "moduleFileExtensions": ["js", "jsx", "ts", "tsx"]
+}

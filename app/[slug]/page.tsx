@@ -242,7 +242,12 @@ export default function PlaylistPage({ params }: PlaylistPageProps) {
 
             {/* YouTube section para páginas de playlist */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Videos de YouTube</h2>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Videos analizados y clasificados según la playlist con el webhook de n8n
+                </p>
+              </div>
               <YouTubeDashboard maxItems={8} showHeader={false} playlistId={activePlaylist} />
             </div>
 
