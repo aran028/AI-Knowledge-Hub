@@ -27,57 +27,13 @@ export function useYouTubeContent(playlistId?: string | null, filters?: {
     
     setInitialized(true)
     
-    // Intentar cargar datos reales de YouTube si hay usuario, sino mostrar demo
-    if (user) {
-      fetchContent()
-    } else {
-      // Datos demo solo cuando no hay usuario autenticado
-      const sampleContent: YouTubeContent[] = [
-        {
-          id: 'demo-1',
-          video_id: 'dQw4w9WgXcQ',
-          title: 'Guía Completa de ChatGPT para Desarrolladores',
-          description: 'Aprende a integrar ChatGPT en tus aplicaciones y flujos de trabajo de desarrollo.',
-          channel_name: 'AI Development Tutorial',
-          channel_url: 'https://youtube.com/@aidevelopment',
-          video_url: 'https://youtube.com/watch?v=demo1',
-          thumbnail_url: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
-          duration: 'PT15M30S',
-          published_at: new Date().toISOString(),
-          view_count: 15420,
-          like_count: 892,
-          ai_classification: {
-            category: 'IA/ML',
-            subcategory: 'ChatGPT',
-            tools_detected: ['ChatGPT'],
-            confidence: 0.95,
-            reasoning: 'Video sobre desarrollo con ChatGPT'
-          },
-          confidence_score: 0.95,
-          related_tools: ['ChatGPT', 'OpenAI API'],
-          playlist_id: undefined,
-          tags: ['chatgpt', 'openai', 'desarrollo', 'api'],
-          ai_summary: 'Tutorial completo sobre integración de ChatGPT',
-          ai_key_points: ['Configuración de API', 'Mejores prácticas', 'Casos de uso'],
-          user_id: 'demo-user',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      ]
-      
-      // Apply basic search filter for demo
-      if (filters?.search) {
-        const filtered = sampleContent.filter(item => 
-          item.title.toLowerCase().includes(filters.search!.toLowerCase()) ||
-          item.description?.toLowerCase().includes(filters.search!.toLowerCase())
-        )
-        setContent(filtered)
-      } else {
-        setContent(sampleContent.slice(0, filters?.limit || 6))
-      }
-      
-      setLoading(false)
-    }
+  useEffect(() => {
+    if (initialized) return // Prevent multiple initializations
+    
+    setInitialized(true)
+    
+    // Always try to load real data first, regardless of authentication
+    fetchContent()
   }, [user, initialized]) // Remove filters dependency to prevent re-initialization
 
   const fetchContent = async () => {
@@ -85,92 +41,92 @@ export function useYouTubeContent(playlistId?: string | null, filters?: {
       setLoading(true)
       setError(null)
       
-      let query = supabase
-        .from('youtube_content')
-        .select(`
-          *,
-          playlists (
-            id,
-            name,
-            icon
-          )
-        `)
-        .order('created_at', { ascending: false })
+      console.log('🎬 Loading YouTube videos from API...')
+      
+      // Use our API endpoint instead of direct Supabase query
+      const params = new URLSearchParams()
+      if (playlistId) params.append('playlist', playlistId)
+      if (filters?.search) params.append('search', filters.search)
+      if (filters?.limit) params.append('limit', filters.limit.toString())
+      
+      const url = `/api/youtube/videos?${params.toString()}`
+      console.log('🔗 Fetching:', url)
+      
+      const response = await fetch(url)
+      const apiResult = await response.json()
 
-      // Filter by playlist if specified
-      if (playlistId) {
-        query = query.eq('playlist_id', playlistId)
+      console.log('📦 YouTube API response:', {
+        success: apiResult.success,
+        dataLength: apiResult.data?.length,
+        total: apiResult.total
+      })
+
+      if (!response.ok || !apiResult.success) {
+        console.warn('YouTube API error, using sample data:', apiResult.error)
+        // Use sample data as fallback
+        setContent(getDemoContent())
+        setLoading(false)
+        return
       }
 
-      // Filter by minimum confidence
-      if (filters?.minConfidence) {
-        query = query.gte('confidence_score', filters.minConfidence)
-      }
-
-      // Filter by search in title or description
-      if (filters?.search && filters.search.trim()) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
-      }
-
-      // Filter by tags
-      if (filters?.tags && filters.tags.length > 0) {
-        query = query.overlaps('tags', filters.tags)
-      }
-
-      // Filter by date range
-      if (filters?.dateRange) {
-        query = query
-          .gte('published_at', filters.dateRange.start.toISOString())
-          .lte('published_at', filters.dateRange.end.toISOString())
-      }
-
-      // Apply limit
-      if (filters?.limit) {
-        query = query.limit(filters.limit)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-
-      const processedContent: YouTubeContent[] = (data || []).map((item: any) => ({
-        id: item.id,
-        video_id: item.video_id,
-        title: item.title,
-        description: item.description,
-        channel_name: item.channel_name,
-        channel_url: item.channel_url,
-        video_url: item.video_url,
-        thumbnail_url: item.thumbnail_url || `https://img.youtube.com/vi/${item.video_id}/mqdefault.jpg`,
-        duration: item.duration,
-        published_at: item.published_at,
-        view_count: item.view_count,
-        like_count: item.like_count,
-        ai_classification: item.ai_classification,
-        confidence_score: item.confidence_score,
-        related_tools: item.related_tools,
-        playlist_id: item.playlist_id,
-        tags: item.tags,
-        ai_summary: item.ai_summary,
-        ai_key_points: item.ai_key_points,
-        user_id: item.user_id,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        playlist: item.playlists ? {
-          id: item.playlists.id,
-          name: item.playlists.name,
-          icon: item.playlists.icon,
-        } : undefined,
-      }))
-
-      console.log(`✅ Loaded ${processedContent.length} YouTube videos from database`)
-      setContent(processedContent)
+      // Set content from API response
+      const realContent = apiResult.data || []
+      console.log('✅ Loaded real YouTube videos:', realContent.length)
+      setContent(realContent)
+      
     } catch (error: any) {
-      console.warn('YouTube content fetch failed, showing empty array:', error.message)
-      setContent([])  // Empty array when database fails
-      setError(error.message)  // Show error for debugging
+      console.warn('YouTube API connection failed, using sample data:', error.message)
+      // Use sample data as complete fallback
+      setContent(getDemoContent())
+      setError(null) // Don't show error, just use fallback
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Extract demo content into separate function
+  const getDemoContent = (): YouTubeContent[] => {
+    const sampleContent: YouTubeContent[] = [
+      {
+        id: 'demo-1',
+        video_id: 'dQw4w9WgXcQ',
+        title: 'Guía Completa de ChatGPT para Desarrolladores',
+        description: 'Aprende a integrar ChatGPT en tus aplicaciones y flujos de trabajo de desarrollo.',
+        channel_name: 'AI Development Tutorial',
+        channel_url: 'https://youtube.com/@aidevelopment',
+        video_url: 'https://youtube.com/watch?v=demo1',
+        thumbnail_url: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+        duration: 'PT15M30S',
+        published_at: new Date().toISOString(),
+        view_count: 15420,
+        like_count: 892,
+        ai_classification: {
+          category: 'IA/ML',
+          subcategory: 'ChatGPT',
+          tools_detected: ['ChatGPT'],
+          confidence: 0.95,
+          reasoning: 'Video sobre desarrollo con ChatGPT'
+        },
+        confidence_score: 0.95,
+        related_tools: ['ChatGPT', 'OpenAI API'],
+        playlist_id: undefined,
+        tags: ['chatgpt', 'openai', 'desarrollo', 'api'],
+        ai_summary: 'Tutorial completo sobre integración de ChatGPT',
+        ai_key_points: ['Configuración de API', 'Mejores prácticas', 'Casos de uso'],
+        user_id: 'demo-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    ]
+    
+    // Apply basic search filter for demo
+    if (filters?.search) {
+      return sampleContent.filter(item => 
+        item.title.toLowerCase().includes(filters.search!.toLowerCase()) ||
+        item.description?.toLowerCase().includes(filters.search!.toLowerCase())
+      )
+    } else {
+      return sampleContent.slice(0, filters?.limit || 6)
     }
   }
 
@@ -220,68 +176,31 @@ export function useYouTubeStats() {
       setLoading(true)
       setError(null)
 
-      const { data, error } = await supabase
-        .from('youtube_content')
-        .select('ai_classification, confidence_score, related_tools, channel_name, created_at, view_count')
+      // Use our API endpoint instead of direct Supabase query
+      const response = await fetch('/api/youtube/stats')
+      const apiResult = await response.json()
 
-      if (error) throw error
+      if (!response.ok || !apiResult.success) {
+        console.warn('YouTube stats API error, keeping demo data:', apiResult.error)
+        setLoading(false)
+        return
+      }
 
-      const videos = data as YouTubeContent[] || []
+      // Set stats from API response
+      setStats(apiResult.data || {
+        totalVideos: 0,
+        totalChannels: 0,
+        totalViews: 0,
+        videosThisWeek: 0,
+        averageConfidence: 0,
+        topCategories: [],
+        topTools: [],
+        recentlyAdded: 0,
+      })
       
-      // Calculate statistics
-      const totalVideos = videos.length
-      const uniqueChannels = new Set(videos.map(v => v.channel_name)).size
-      const averageConfidence = totalVideos > 0 ? videos.reduce((sum, v) => sum + (v.confidence_score || 0), 0) / totalVideos : 0
-      const totalViews = videos.reduce((sum, v) => sum + (v.view_count || 0), 0)
-
-      // Videos added recently (last 7 days)
-      const oneWeekAgo = new Date()
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-      const videosThisWeek = videos.filter(v => 
-        new Date(v.created_at || Date.now()) >= oneWeekAgo
-      ).length
-
-      // Top categories
-      const categoryCount: Record<string, number> = {}
-      videos.forEach(v => {
-        const category = v.ai_classification?.category
-        if (category) {
-          categoryCount[category] = (categoryCount[category] || 0) + 1
-        }
-      })
-      const topCategories = Object.entries(categoryCount)
-        .map(([category, count]) => ({ category, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
-
-      // Top tools
-      const toolCount: Record<string, number> = {}
-      videos.forEach(v => {
-        v.related_tools?.forEach((tool: string) => {
-          toolCount[tool] = (toolCount[tool] || 0) + 1
-        })
-      })
-      const topTools = Object.entries(toolCount)
-        .map(([tool, count]) => ({ tool, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
-
-      setStats({
-        totalVideos,
-        totalChannels: uniqueChannels,
-        totalViews,
-        videosThisWeek,
-        averageConfidence,
-        topCategories,
-        topTools,
-        recentlyAdded: videosThisWeek,
-      })
-
-      console.log(`✅ YouTube stats: ${totalVideos} videos, ${uniqueChannels} channels`)
-
     } catch (error: any) {
-      console.warn('YouTube stats fetch failed, keeping demo stats:', error.message)
-      setError(error.message) // Show error for debugging
+      console.warn('YouTube stats API connection failed, keeping demo data:', error.message)
+      setError(null) // Don't show error, just keep demo data
     } finally {
       setLoading(false)
     }

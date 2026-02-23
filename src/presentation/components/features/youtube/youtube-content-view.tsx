@@ -96,7 +96,8 @@ export function YouTubeContentView() {
     return sorted
   }, [content, sortBy, sortOrder])
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number | undefined | null) => {
+    if (num === undefined || num === null || isNaN(num)) return '0'
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
     return num.toString()
@@ -176,7 +177,7 @@ export function YouTubeContentView() {
                 <Play className="h-4 w-4 text-muted-foreground" />
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Videos</p>
-                  <p className="text-2xl font-bold">{stats.totalVideos}</p>
+                  <p className="text-2xl font-bold">{stats?.totalVideos || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -189,7 +190,7 @@ export function YouTubeContentView() {
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Visualizaciones</p>
                   <p className="text-2xl font-bold">
-                    {formatNumber(stats.totalViews)}
+                    {formatNumber(stats?.totalViews)}
                   </p>
                 </div>
               </div>
@@ -202,7 +203,7 @@ export function YouTubeContentView() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Esta semana</p>
-                  <p className="text-2xl font-bold">{stats.videosThisWeek}</p>
+                  <p className="text-2xl font-bold">{stats?.videosThisWeek || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -215,7 +216,7 @@ export function YouTubeContentView() {
                 <div className="ml-2">
                   <p className="text-xs font-medium text-muted-foreground">Confianza promedio</p>
                   <p className="text-2xl font-bold">
-                    {Math.round(stats.averageConfidence * 100)}%
+                    {Math.round((stats?.averageConfidence || 0) * 100)}%
                   </p>
                 </div>
               </div>

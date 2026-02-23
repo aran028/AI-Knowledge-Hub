@@ -5,8 +5,8 @@ import { Sidebar } from "@/components/layout/sidebar.component"
 import { GlassHeader } from "@/components/layout/glass-header.component"
 import { HeroSection } from "@/components/layout/hero-section.component"
 import { ScrollRow } from "@/components/layout/scroll-row.component"
-import { GridView } from "@/src/presentation/components/features/tools/tool-grid.component"
-import { YouTubeDashboard } from "@/src/presentation/components/features/youtube/youtube-dashboard"
+import { GridView } from "@/components/features/tools/tool-grid.component"
+import { YouTubeDashboard } from "@/components/features/youtube/youtube-dashboard"
 import { ChatBot } from "@/src/presentation/components/ui/chatbot"
 import { usePlaylists, useTools } from "@/src/presentation/hooks/use-supabase.hook"
 
@@ -169,19 +169,7 @@ export default function Home() {
             )}
 
             {/* Scroll rows - ahora usando GridView para unificar estilo */}
-            {/* Debug info - temporary */}
-            <div className="bg-yellow-100 p-4 rounded text-sm">
-              <p><strong>🚀 LIVE HOOK DEBUG:</strong></p>
-              <p>Tools Loading: {toolsLoading ? 'true' : 'false'}</p>
-              <p>Popular Tools Count: {tools.popularTools?.length || 0}</p>
-              <p>Recent Tools Count: {tools.recentlyAdded?.length || 0}</p>
-              <p>Active Playlist: {activePlaylist || 'none'}</p>
-              <p>Sample Popular Tool: {tools.popularTools?.[0]?.title || 'none'}</p>
-              <p>Sample Recent Tool: {tools.recentlyAdded?.[0]?.title || 'none'}</p>
-              <p>Hook Error: {toolsError || 'none'}</p>
-              <p>Last Check: {new Date().toLocaleTimeString()}</p>
-            </div>
-            {tools.popularTools && tools.popularTools.length > 0 && (
+            {tools.popularTools.length > 0 && (
               <GridView
                 title={activePlaylist ? "Tools" : "Popular Tools"}
                 description={activePlaylist ? activeSubject?.description : undefined}
@@ -208,17 +196,20 @@ export default function Home() {
               </div>
             )}
 
-            {/* Empty state - Simple version */}
-            {activePlaylist && tools.popularTools.length === 0 && (
+            {/* Empty state */
+            {activePlaylist && tools.popularTools.length === 0 && 
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-secondary">
                   <span className="text-2xl text-muted-foreground">?</span>
                 </div>
-                <h2 className="text-xl font-bold text-foreground">No tools found</h2>
-                <p className="mt-2 text-sm text-muted-foreground">No tools match this subject yet.</p>
+                <h2 className="text-xl font-bold text-foreground">
+                  No tools found
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No tools match this subject yet. Check back soon.
+                </p>
               </div>
-            )}
-
+            }
           </div>
         </div>
         

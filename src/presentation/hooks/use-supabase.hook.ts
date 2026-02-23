@@ -1,41 +1,18 @@
 "use client"
 
+console.log('📁 use-supabase.hook.ts module loaded!')
+
 import { useState, useEffect } from 'react'
 import { supabase, type DatabaseTool, type DatabasePlaylist } from '@/shared/config/supabase-auth'
 import { useAuth } from '@/src/presentation/hooks/use-auth.hook'
 import type { Tool, Playlist } from '@/shared/types/data'
-// Import static data as fallback
-import { 
-  playlists as staticPlaylists, 
-  recentlyAdded, 
-  popularTools, 
-  trendingNow, 
-  myProjects 
-} from '@/shared/types/data'
 
-// Helper function to get static tools organized by structure
-function getStaticToolsStructure(playlistId?: string | null) {
-  if (playlistId) {
-    // Filter tools by playlist if specified
-    const filteredTools = [...recentlyAdded, ...popularTools, ...trendingNow, ...myProjects]
-      .filter(tool => {
-        const playlist = staticPlaylists.find((p: Playlist) => p.name === tool.category)
-        return playlist?.id === playlistId
-      })
-    
-    return {
-      recentlyAdded: filteredTools.slice(0, 4),
-      popularTools: filteredTools, // Todas las herramientas de la playlist
-      trendingNow: [], // No usar trending para playlist específicas
-    }
-  }
-  
-  // Return all static tools organized
+// Helper function to get empty tools structure as fallback
+function getEmptyToolsStructure() {
   return {
-    recentlyAdded,
-    popularTools: popularTools.slice(0, 8), // Limitar para página principal
-    myProjects: myProjects.slice(0, 6),
-    trendingNow: [], // Eliminado trending
+    recentlyAdded: [],
+    popularTools: [],
+    trendingNow: [],
   }
 }
 
@@ -55,63 +32,46 @@ export function usePlaylists() {
       setLoading(true)
       setError(null)
       
-      // Try Supabase with timeout
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timeout')), 10000)
-      )
-      
-      const supabasePromise = supabase
-        .from('playlists')
-        .select('*')
-        .order('name', { ascending: true })
+      // Use our API endpoint instead of direct Supabase query
+      const response = await fetch('/api/playlists')
+      const apiResult = await response.json()
 
-      const result = await Promise.race([supabasePromise, timeoutPromise]) as any
-
-      if (result.error) {
-        console.warn('Supabase error, using static data as fallback:', result.error.message)
-        setPlaylists(staticPlaylists)
-        setError(null) // Keep error null to avoid showing error state
+      if (!response.ok || !apiResult.success) {
+        console.warn('API error, using empty array as fallback:', apiResult.error)
+        setPlaylists([])
+        setError(null)
         setLoading(false)
         return
       }
 
-      if (!result.data || result.data.length === 0) {
-        console.info('No playlists found in database, using static data')
-        setPlaylists(staticPlaylists) 
+      if (!apiResult.data || apiResult.data.length === 0) {
+        console.info('No playlists found in API, using empty array')
+        setPlaylists([]) 
         setLoading(false)
         return
       }
 
-      // Contar herramientas por playlist usando la relación
-      const playlistsWithCount = await Promise.all(
-        (result.data || []).map(async (playlist: DatabasePlaylist) => {
-          const { count } = await supabase
-            .from('tools')
-            .select('*', { count: 'exact', head: true })
-            .eq('playlist_id', playlist.id)
+      // Transform API data to match our interface
+      const playlistsWithHref = apiResult.data.map((playlist: any) => ({
+        id: playlist.id,
+        name: playlist.name,
+        icon: playlist.icon,
+        count: playlist.count,
+        href: `/?playlist=${playlist.id}`
+      }))
 
-          return {
-            id: playlist.id,
-            name: playlist.name,
-            icon: playlist.icon,
-            count: count || 0,
-            href: `/?playlist=${playlist.id}`
-          }
-        })
-      )
-
-      console.log(`✅ Loaded ${playlistsWithCount.length} playlists from Supabase`)
-      setPlaylists(playlistsWithCount)
-      setError(null) // Clear any previous errors
+      console.log(`✅ Loaded ${playlistsWithHref.length} playlists from API`)
+      setPlaylists(playlistsWithHref)
+      setError(null)
       
       // Log cada playlist para debugging
-      playlistsWithCount.forEach((p: any) => {
+      playlistsWithHref.forEach((p: any) => {
         console.log(`   📋 ${p.name}: ${p.count} tools`)
       })
     } catch (error: any) {
-      console.warn('Database connection failed, using static data as fallback:', error.message)
-      setPlaylists(staticPlaylists)
-      setError(null) // Don't show error, just use static data
+      console.warn('API connection failed, using empty array as fallback:', error.message)
+      setPlaylists([])
+      setError(null)
     } finally {
       setLoading(false)
     }
@@ -120,7 +80,6 @@ export function usePlaylists() {
   return { playlists, loading, error, refetch: fetchPlaylists }
 }
 
-// Hook para obtener herramientas con filtros
 export function useTools(playlistId?: string | null) {
   const [tools, setTools] = useState<{
     recentlyAdded: Tool[]
@@ -130,114 +89,61 @@ export function useTools(playlistId?: string | null) {
     recentlyAdded: [],
     popularTools: [],
     trendingNow: [],
-  }) // Start empty
-  const [loading, setLoading] = useState(true) // Start loading
+  })
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Cargar datos reales de Supabase
-    fetchTools()
+    async function loadTools() {
+      try {
+        console.log('🚀 LOADING TOOLS...')
+        setLoading(true)
+        
+        const url = playlistId ? `/api/tools?playlist=${playlistId}` : '/api/tools'
+        console.log('🔗 Fetching:', url)
+        
+        const response = await fetch(url)
+        console.log('📡 Response status:', response.status, response.ok)
+        
+        const data = await response.json()
+        console.log('📦 API Response structure:', {
+          success: data.success,
+          hasData: !!data.data,
+          recentLength: data.data?.recent?.length,
+          popularLength: data.data?.popular?.length
+        })
+
+        if (data.success && data.data) {
+          const newTools = {
+            recentlyAdded: data.data.recent || [],
+            popularTools: data.data.popular || [],
+            trendingNow: [],
+          }
+          
+          console.log('✅ Setting tools state:', {
+            recentCount: newTools.recentlyAdded.length,
+            popularCount: newTools.popularTools.length
+          })
+          
+          setTools(newTools)
+          setError(null)
+        } else {
+          console.warn('❌ API failed or invalid structure:', data.error || 'No success/data')
+          setError(data.error || 'Failed to load tools')
+        }
+      } catch (err: any) {
+        console.error('💥 Fetch error:', err.message)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+        console.log('🏁 Hook loading finished')
+      }
+    }
+
+    loadTools()
   }, [playlistId])
 
-  const fetchTools = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      let query = supabase
-        .from('tools')
-        .select(`
-          id,
-          title,
-          summary,
-          image,
-          url,
-          tags,
-          created_at,
-          playlists!inner(
-            id,
-            name
-          )
-        `)
-      
-      if (playlistId) {
-        query = query.eq('playlist_id', playlistId)
-      }
-
-      // Add timeout
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timeout')), 10000)
-      )
-      
-      const supabasePromise = query.order('created_at', { ascending: false })
-      const result = await Promise.race([supabasePromise, timeoutPromise]) as any
-
-      if (result.error) {
-        console.warn('Supabase tools error, using static data as fallback:', result.error.message)
-        // Use static data as complete fallback without showing error
-        const staticData = getStaticToolsStructure(playlistId) 
-        setTools(staticData)
-        setLoading(false)
-        return
-      }
-
-      // If no data in database, use static data
-      if (!result.data || result.data.length === 0) {
-        console.info(`No tools found ${playlistId ? `for playlist ${playlistId}` : ''}, using static data`)
-        const staticData = getStaticToolsStructure(playlistId)
-        setTools(staticData)
-        setLoading(false)
-        return
-      }
-
-      const allTools = (result.data || []).map((tool: any) => ({
-        id: tool.id,
-        title: tool.title,
-        summary: tool.summary,
-        category: tool.playlists.name,
-        image: tool.image,
-        url: tool.url,
-        tags: tool.tags,
-      }))
-
-      console.log(`✅ Loaded ${allTools.length} tools from Supabase${playlistId ? ` for playlist ${playlistId}` : ''}`)
-
-      // Log herramientas para debugging
-      allTools.forEach((tool, i) => {
-        if (i < 3) console.log(`   🛠️ ${tool.title} (${tool.category})`)
-      })
-      if (allTools.length > 3) console.log(`   ... y ${allTools.length - 3} más`)
-
-      // Dividir herramientas por tipo
-      if (playlistId) {
-        // Para páginas de playlist específica, mostrar todos los tools en "Tools"
-        setTools({
-          recentlyAdded: allTools.slice(0, 4),
-          popularTools: allTools, // Todas las herramientas de la playlist
-          trendingNow: [], // No usar trending para playlist específicas
-        })
-      } else {
-        // Para página principal, usar distribución normal
-        setTools({
-          recentlyAdded: allTools.slice(0, 4),
-          popularTools: allTools.filter((_, index) => index % 2 === 0).slice(0, 12), // Más herramientas en popular
-          trendingNow: [], // Eliminado trending como solicitado
-        })
-      }
-      
-      setError(null) // Clear any previous errors
-    } catch (error: any) {
-      console.warn('Database connection failed, using static data:', error.message)
-      // Use static data structure as fallback
-      const staticData = getStaticToolsStructure(playlistId)
-      setTools(staticData)
-      setError(null) // Don't show error, just use fallback data
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return { tools, loading, error, refetch: fetchTools }
+  return { tools, loading, error, refetch: () => {} }
 }
 
 // Hook para agregar una nueva herramienta

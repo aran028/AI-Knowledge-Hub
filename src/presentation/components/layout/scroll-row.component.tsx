@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { ToolCard } from "@/components/features/tools/tool-card.component"
+import { ToolCard } from "@/src/presentation/components/features/tools/tool-card.component"
 import type { Tool } from "@/shared/types/data"
 
 interface ScrollRowProps {

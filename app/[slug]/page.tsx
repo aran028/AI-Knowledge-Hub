@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, use } from "react"
 import { Sidebar } from "@/components/layout/sidebar.component"
 import { GlassHeader } from "@/components/layout/glass-header.component"
 import { HeroSection } from "@/components/layout/hero-section.component"
@@ -10,7 +10,14 @@ import { YouTubeDashboard } from "@/src/presentation/components/features/youtube
 import { ChatBot } from "@/src/presentation/components/ui/chatbot"
 import { usePlaylists, useTools } from "@/src/presentation/hooks/use-supabase.hook"
 
-export default function Home() {
+interface PlaylistPageProps {
+  params: Promise<{
+    slug: string
+  }>
+}
+
+export default function PlaylistPage({ params }: PlaylistPageProps) {
+  const resolvedParams = use(params)
   const [activePlaylist, setActivePlaylist] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [searchResults, setSearchResults] = useState<{tools: string[], playlists: string[]}>({tools: [], playlists: []})
@@ -19,6 +26,32 @@ export default function Home() {
   const { playlists, loading: playlistsLoading, error: playlistsError, refetch: refetchPlaylists } = usePlaylists()
   
   const { tools, loading: toolsLoading, error: toolsError, refetch: refetchTools } = useTools(activePlaylist)
+
+  // Función helper para convertir nombre a slug
+  const nameToSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/[áàäâ]/g, 'a')
+      .replace(/[éèëê]/g, 'e')
+      .replace(/[íìïî]/g, 'i')
+      .replace(/[óòöô]/g, 'o')
+      .replace(/[úùüû]/g, 'u')
+      .replace(/ñ/g, 'n')
+      .replace(/[^\w\s-]/g, '') // Remover caracteres especiales
+      .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+      .replace(/-+/g, '-') // Reemplazar múltiples guiones con uno
+      .trim()
+  }
+
+  // Buscar la playlist correspondiente al slug
+  useEffect(() => {
+    if (playlists.length > 0 && resolvedParams.slug) {
+      const playlist = playlists.find(p => nameToSlug(p.name) === resolvedParams.slug)
+      if (playlist) {
+        setActivePlaylist(playlist.id)
+      }
+    }
+  }, [playlists, resolvedParams.slug])
 
   const activeSubject = playlists.find((p) => p.id === activePlaylist)
 
@@ -115,6 +148,26 @@ export default function Home() {
     )
   }
 
+  // Si no encontramos la playlist, mostrar 404
+  if (!playlistsLoading && playlists.length > 0 && !activeSubject) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-foreground mb-2">Playlist no encontrada</h2>
+          <p className="text-muted-foreground mb-4">
+            La playlist "{resolvedParams.slug}" no existe.
+          </p>
+          <a 
+            href="/"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Ir a inicio
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -148,11 +201,8 @@ export default function Home() {
               </div>
             )}
 
-            {/* Hero Section — only on home */}
-            {!activePlaylist && <HeroSection tools={tools.recentlyAdded} />}
-
             {/* Filtered view title */}
-            {activePlaylist && activeSubject && (
+            {activeSubject && (
               <div className="pt-8">
                 <p className="text-xs font-bold uppercase tracking-widest text-primary">
                   Subject
@@ -168,23 +218,21 @@ export default function Home() {
               </div>
             )}
 
-            {/* Scroll rows - ahora usando GridView para unificar estilo */}
             {/* Debug info - temporary */}
             <div className="bg-yellow-100 p-4 rounded text-sm">
-              <p><strong>🚀 LIVE HOOK DEBUG:</strong></p>
-              <p>Tools Loading: {toolsLoading ? 'true' : 'false'}</p>
-              <p>Popular Tools Count: {tools.popularTools?.length || 0}</p>
-              <p>Recent Tools Count: {tools.recentlyAdded?.length || 0}</p>
-              <p>Active Playlist: {activePlaylist || 'none'}</p>
-              <p>Sample Popular Tool: {tools.popularTools?.[0]?.title || 'none'}</p>
-              <p>Sample Recent Tool: {tools.recentlyAdded?.[0]?.title || 'none'}</p>
-              <p>Hook Error: {toolsError || 'none'}</p>
-              <p>Last Check: {new Date().toLocaleTimeString()}</p>
+              <p>Debug: Tools loading: {toolsLoading ? 'true' : 'false'}</p>
+              <p>Debug: popularTools length: {tools.popularTools?.length || 0}</p>
+              <p>Debug: recentlyAdded length: {tools.recentlyAdded?.length || 0}</p>
+              <p>Debug: activePlaylist: {activePlaylist || 'none'}</p>
+              <p>Debug: slug: {resolvedParams.slug}</p>
+              <p>Debug: activeSubject: {activeSubject?.name || 'none'}</p>
             </div>
+            
+            {/* Tools grid */}
             {tools.popularTools && tools.popularTools.length > 0 && (
               <GridView
-                title={activePlaylist ? "Tools" : "Popular Tools"}
-                description={activePlaylist ? activeSubject?.description : undefined}
+                title="Tools"
+                description={activeSubject?.description}
                 tools={tools.popularTools}
                 showManagement={true}
                 onToolChanged={handleToolChanged}
@@ -193,22 +241,12 @@ export default function Home() {
             )}
 
             {/* YouTube section para páginas de playlist */}
-            {activePlaylist && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
-                <YouTubeDashboard maxItems={8} showHeader={false} />
-              </div>
-            )}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
+              <YouTubeDashboard maxItems={8} showHeader={false} />
+            </div>
 
-            {/* YouTube Dashboard — only on home */}
-            {!activePlaylist && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-foreground">YouTube Content</h2>
-                <YouTubeDashboard maxItems={6} />
-              </div>
-            )}
-
-            {/* Empty state - Simple version */}
+            {/* Empty state */}
             {activePlaylist && tools.popularTools.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-secondary">
